@@ -7,13 +7,12 @@ Build custom cloud images with pre-installed packages for faster VM boot times.
 ```bash
 apt install packer
 git clone https://github.com/john-derose/packer.git
+cd packer
 ```
 
 ## Quick Start
 
 ```bash
-cd /root/packer
-
 # Build Debian 12 (Bookworm)
 packer build templates/debian-12-base.pkr.hcl
 # Output: output/debian-12-base.qcow2
