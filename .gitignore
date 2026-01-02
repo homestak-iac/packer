@@ -1,6 +1,9 @@
 # Packer output
 output/
 
+# Build logs
+logs/
+
 # Packer cache
 packer_cache/
 

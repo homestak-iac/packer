@@ -13,16 +13,12 @@ cd packer
 ## Quick Start
 
 ```bash
-# Build Debian 12 (Bookworm)
-packer build templates/debian-12-base.pkr.hcl
-# Output: output/debian-12-base.qcow2
-
-# Build Debian 13 (Trixie)
-packer build templates/debian-13-base.pkr.hcl
-# Output: output/debian-13-base.qcow2
+./build.sh
 ```
 
-All images include `qemu-guest-agent` pre-installed.
+Select a template from the menu. Builds are logged to `logs/`.
+
+All images include `qemu-guest-agent` pre-installed and output to `output/`.
 
 ## Image Serving (Deferred)
 
