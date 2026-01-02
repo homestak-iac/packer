@@ -31,7 +31,7 @@ fi
 template="${templates[$((selection - 1))]}"
 name=$(basename "$template" .pkr.hcl)
 timestamp=$(date +%Y%m%d-%H%M%S)
-logfile="logs/${name}-${timestamp}.log"
+logfile="logs/${name}.${timestamp}.log"
 
 # Ensure logs directory exists
 mkdir -p logs
