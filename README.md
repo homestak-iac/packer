@@ -2,6 +2,12 @@
 
 Build custom cloud images with pre-installed packages for faster VM boot times.
 
+## Prerequisites
+
+```bash
+apt install packer
+```
+
 ## Quick Start
 
 ```bash
