@@ -6,6 +6,7 @@ Build custom cloud images with pre-installed packages for faster VM boot times.
 
 ```bash
 apt install packer
+git clone https://github.com/john-derose/packer.git
 ```
 
 ## Quick Start
