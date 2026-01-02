@@ -18,7 +18,7 @@ cd packer
 
 Select a template from the menu. Builds are logged to `logs/`.
 
-All images include `qemu-guest-agent` pre-installed and output to `output/`.
+All images include `qemu-guest-agent` pre-installed and output to `images/`.
 
 ## Image Serving (Deferred)
 
@@ -29,7 +29,7 @@ To serve images via HTTP for use with tofu `proxmox-file` module:
 ```bash
 # Copy image to web directory
 mkdir -p /var/www/images
-cp output/debian-12-base.qcow2 /var/www/images/
+cp images/debian-12/debian-12-base.qcow2 /var/www/images/
 
 # Start server (foreground, for testing)
 cd /var/www/images && python3 -m http.server 8080

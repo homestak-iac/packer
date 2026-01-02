@@ -14,12 +14,13 @@ variable "output_name" {
 
 source "qemu" "debian" {
   # Use Debian cloud image as base
-  iso_url      = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
-  iso_checksum = "file:https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
-  disk_image   = true
+  iso_url         = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  iso_checksum    = "file:https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
+  iso_target_path = "cache/debian-13-generic-amd64.qcow2"
+  disk_image      = true
 
   # Output settings
-  output_directory = "output"
+  output_directory = "images/debian-13"
   vm_name          = var.output_name
   format           = "qcow2"
 

@@ -1,11 +1,11 @@
-# Packer output
-output/
+# Built images
+images/
 
 # Build logs
 logs/
 
-# Packer cache
-packer_cache/
+# Downloaded source images
+cache/
 
 # Temporary files
 *.iso
