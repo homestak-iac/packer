@@ -5,12 +5,18 @@ Build custom cloud images with pre-installed packages for faster VM boot times.
 ## Quick Start
 
 ```bash
-# Build the base Debian 12 image (includes qemu-guest-agent)
 cd /root/packer
-packer build debian-12-base.pkr.hcl
 
+# Build Debian 12 (Bookworm)
+packer build templates/debian-12-base.pkr.hcl
 # Output: output/debian-12-base.qcow2
+
+# Build Debian 13 (Trixie)
+packer build templates/debian-13-base.pkr.hcl
+# Output: output/debian-13-base.qcow2
 ```
+
+All images include `qemu-guest-agent` pre-installed.
 
 ## Image Serving (Deferred)
 
