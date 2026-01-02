@@ -1,0 +1,9 @@
+# Packer output
+output/
+
+# Packer cache
+packer_cache/
+
+# Temporary files
+*.iso
+*.log
