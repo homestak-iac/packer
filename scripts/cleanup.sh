@@ -34,8 +34,17 @@ history -c
 rm -rf /tmp/*
 rm -rf /var/tmp/*
 
-# Blacklist wireless modules (not needed in VMs)
-echo "blacklist cfg80211" > /etc/modprobe.d/no-wireless.conf
+# Blacklist unnecessary modules for headless VMs
+cat > /etc/modprobe.d/blacklist-vm.conf << 'EOF'
+blacklist cfg80211
+blacklist floppy
+blacklist joydev
+blacklist psmouse
+blacklist pcspkr
+EOF
+
+# Rebuild initramfs to apply blacklist
+update-initramfs -u
 
 # Zero out free space for better compression (optional, takes time)
 # dd if=/dev/zero of=/EMPTY bs=1M 2>/dev/null || true
