@@ -9,18 +9,18 @@ packer {
 
 variable "output_name" {
   type    = string
-  default = "debian-12-base.qcow2"
+  default = "debian-13-custom.qcow2"
 }
 
 source "qemu" "debian" {
   # Use Debian cloud image as base
-  iso_url         = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
-  iso_checksum    = "file:https://cloud.debian.org/images/cloud/bookworm/latest/SHA512SUMS"
-  iso_target_path = "cache/debian-12-generic-amd64.qcow2"
+  iso_url         = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  iso_checksum    = "file:https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
+  iso_target_path = "cache/debian-13-generic-amd64.qcow2"
   disk_image      = true
 
   # Output settings
-  output_directory = "images/debian-12"
+  output_directory = "images/debian-13"
   vm_name          = var.output_name
   format           = "qcow2"
 

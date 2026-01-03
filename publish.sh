@@ -12,9 +12,8 @@ published=0
 for src in images/*/*.qcow2; do
     [[ -f "$src" ]] || continue
 
-    # debian-12-base.qcow2 -> debian-12-custom.img
-    basename=$(basename "$src" .qcow2)
-    destname="${basename%-base}-custom.img"
+    # debian-12-custom.qcow2 -> debian-12-custom.img
+    destname="$(basename "$src" .qcow2).img"
     dest="${DEST_DIR}/${destname}"
 
     echo "  $src -> $dest"
