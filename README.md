@@ -1,97 +1,72 @@
 # Packer - Custom VM Images
 
-Build custom cloud images with pre-installed packages for faster VM boot times.
-
-## Prerequisites
-
-```bash
-apt install packer
-git clone https://github.com/john-derose/packer.git
-cd packer
-```
+Build custom Debian cloud images with pre-installed packages for faster VM boot times.
 
 ## Quick Start
 
 ```bash
-./build.sh
+./build.sh      # Interactive build menu
+./publish.sh    # Copy images to Proxmox storage
 ```
 
-Select a template from the menu. Builds are logged to `logs/`.
+## Features
 
-All images include `qemu-guest-agent` pre-installed and output to `images/`.
+- **Pre-installed qemu-guest-agent** - ~16s boot vs ~35s with cloud-init install
+- **Blacklisted modules** - No unnecessary drivers (wireless, floppy, joystick, etc.)
+- **Smart publish** - Checksum-based copy skips unchanged images
 
-## Image Serving (Deferred)
+## Project Structure
 
-To serve images via HTTP for use with tofu `proxmox-file` module:
-
-### Option 1: Simple Python HTTP Server
-
-```bash
-# Copy image to web directory
-mkdir -p /var/www/images
-cp images/debian-12/debian-12-base.qcow2 /var/www/images/
-
-# Start server (foreground, for testing)
-cd /var/www/images && python3 -m http.server 8080
-
-# Image URL: http://10.0.12.124:8080/debian-12-base.qcow2
+```
+packer/
+├── templates/          # Packer HCL templates
+│   ├── debian-12-custom.pkr.hcl
+│   └── debian-13-custom.pkr.hcl
+├── scripts/
+│   └── cleanup.sh      # Template preparation (cloud-init reset, module blacklist)
+├── cloud-init/         # Build-time cloud-init config
+├── images/             # Built images (git-ignored)
+├── cache/              # Downloaded base images (git-ignored)
+├── logs/               # Build logs
+├── build.sh            # Interactive build script
+└── publish.sh          # Copy images to Proxmox storage
 ```
 
-### Option 2: Systemd Service (Persistent)
+## Workflow
 
-Create `/etc/systemd/system/image-server.service`:
-```ini
-[Unit]
-Description=Simple HTTP server for VM images
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/var/www/images
-ExecStart=/usr/bin/python3 -m http.server 8080
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
 ```
-
-Then:
-```bash
-systemctl daemon-reload
-systemctl enable --now image-server
-```
-
-### Option 3: Nginx (Production)
-
-```bash
-apt-get install -y nginx
-
-# Add to /etc/nginx/sites-available/default:
-# location /images/ {
-#     alias /var/www/images/;
-#     autoindex on;
-# }
-
-systemctl restart nginx
-# Image URL: http://10.0.12.124/images/debian-12-base.qcow2
+templates/*.pkr.hcl
+    ↓ ./build.sh
+images/*/*.qcow2
+    ↓ ./publish.sh
+/var/lib/vz/template/iso/*-custom.img
+    ↓ tofu apply
+VMs boot in ~16s
 ```
 
 ## Using with Tofu
 
-Once serving, update environment to use custom image:
+The tofu `proxmox-file` module supports local images:
 
 ```hcl
 module "cloud_image" {
-  source            = "../../proxmox-file"
-  proxmox_node_name = var.proxmox_node_name
-  source_file_url   = "http://10.0.12.124:8080/debian-12-base.qcow2"
-  source_file_path  = "debian-12-base.qcow2"
+  source        = "../../proxmox-file"
+  local_file_id = "local:iso/debian-12-custom.img"
 }
 ```
 
-Then simplify cloud-init (remove packages section since qemu-guest-agent is pre-installed).
+## Module Blacklist
 
-## Build Time
+Images exclude unnecessary kernel modules for headless VMs:
 
-- Full build: ~1-2 minutes
-- Downloads Debian cloud image on first run (cached after)
+- `cfg80211` - Wireless networking
+- `floppy` - Floppy disk driver
+- `joydev` - Joystick device
+- `psmouse` - PS/2 mouse
+- `pcspkr` - PC speaker
+
+## Build Times
+
+- Debian 12: ~2 minutes
+- Debian 13: ~1.5 minutes
+- Base images cached after first download
