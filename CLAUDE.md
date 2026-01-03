@@ -64,12 +64,14 @@ Each template:
 
 ## Related Projects
 
-```
-/root/homestak/
-├── ansible/          # Proxmox host configuration
-├── packer/           # This project - custom cloud images
-└── tofu/             # VM provisioning (consumes images via proxmox-file module)
-```
+Part of the [homestak-dev](https://github.com/homestak-dev) organization:
+
+| Repo | Purpose |
+|------|---------|
+| [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
+| [iac-driver](https://github.com/homestak-dev/iac-driver) | E2E test orchestration |
+| [packer](https://github.com/homestak-dev/packer) | This project - custom cloud images |
+| [tofu](https://github.com/homestak-dev/tofu) | VM provisioning (consumes images) |
 
 ## Prerequisites
 
@@ -84,3 +86,7 @@ Each template:
 - Output names: `debian-{version}-custom.qcow2` → published as `.img`
 - Build logs: `logs/{template}.{timestamp}.log`
 - Build time: ~1.5-2 minutes per image
+
+## License
+
+Apache 2.0 - see [LICENSE](LICENSE)

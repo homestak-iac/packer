@@ -1,6 +1,8 @@
-# Packer - Custom VM Images
+# packer
 
 Build custom Debian cloud images with pre-installed packages for faster VM boot times.
+
+Part of the [homestak-dev](https://github.com/homestak-dev) organization.
 
 ## Quick Start
 
@@ -70,3 +72,15 @@ Images exclude unnecessary kernel modules for headless VMs:
 - Debian 12: ~2 minutes
 - Debian 13: ~1.5 minutes
 - Base images cached after first download
+
+## Related Repos
+
+| Repo | Purpose |
+|------|---------|
+| [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
+| [iac-driver](https://github.com/homestak-dev/iac-driver) | E2E test orchestration |
+| [tofu](https://github.com/homestak-dev/tofu) | VM provisioning (consumes images) |
+
+## License
+
+Apache 2.0 - see [LICENSE](LICENSE)
