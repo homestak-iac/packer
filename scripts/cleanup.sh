@@ -12,9 +12,13 @@ rm -rf /var/lib/apt/lists/*
 # Reset cloud-init so it runs again on next boot
 cloud-init clean --logs
 
-# Remove machine-id (will be regenerated on boot)
-rm -f /etc/machine-id
-rm -f /var/lib/dbus/machine-id
+# Remove cloud-init generated network config (will be regenerated on boot)
+rm -f /etc/netplan/50-cloud-init.yaml
+
+# Empty machine-id (will be regenerated on boot)
+# Must truncate, not delete - systemd expects the file to exist
+truncate -s 0 /etc/machine-id
+truncate -s 0 /var/lib/dbus/machine-id
 
 # Clear hostname (cloud-init will set it)
 truncate -s 0 /etc/hostname
