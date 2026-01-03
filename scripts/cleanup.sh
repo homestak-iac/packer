@@ -26,6 +26,9 @@ truncate -s 0 /etc/hostname
 # Remove SSH host keys (will be regenerated on boot)
 rm -f /etc/ssh/ssh_host_*
 
+# Remove build-time SSH authorized_keys (cloud-init will set at boot)
+rm -f /root/.ssh/authorized_keys
+
 # Clear shell history
 rm -f /root/.bash_history
 history -c
