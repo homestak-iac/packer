@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Debian Cloud Images
+
+            Pre-built images with qemu-guest-agent for faster boot times (~16s vs ~35s).
+
+            ### Download
+
+            ```bash
+            gh release download ${{ github.ref_name }} --pattern '*.qcow2'
+            ```
+
+            ### Usage
+
+            Images require cloud-init to inject SSH keys and credentials at boot time.
+            See [tofu](https://github.com/homestak-dev/tofu) for provisioning examples.
+
+            ---
+            *Upload images after building locally:*
+            ```bash
+            gh release upload ${{ github.ref_name }} images/debian-12/debian-12-custom.qcow2
+            gh release upload ${{ github.ref_name }} images/debian-13/debian-13-custom.qcow2
+            ```

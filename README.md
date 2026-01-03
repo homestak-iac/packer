@@ -73,6 +73,29 @@ Images exclude unnecessary kernel modules for headless VMs:
 - Debian 13: ~1.5 minutes
 - Base images cached after first download
 
+## Releases
+
+Pre-built images are available as GitHub Release assets.
+
+**Download:**
+```bash
+gh release download --pattern '*.qcow2'
+```
+
+**Create a release:**
+```bash
+# Build images locally (requires KVM)
+./build.sh
+
+# Tag and push
+git tag v1.0.0
+git push origin v1.0.0
+
+# Upload images to the release
+gh release upload v1.0.0 images/debian-12/debian-12-custom.qcow2
+gh release upload v1.0.0 images/debian-13/debian-13-custom.qcow2
+```
+
 ## Related Repos
 
 | Repo | Purpose |
