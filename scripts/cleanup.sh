@@ -34,6 +34,9 @@ history -c
 rm -rf /tmp/*
 rm -rf /var/tmp/*
 
+# Blacklist wireless modules (not needed in VMs)
+echo "blacklist cfg80211" > /etc/modprobe.d/no-wireless.conf
+
 # Zero out free space for better compression (optional, takes time)
 # dd if=/dev/zero of=/EMPTY bs=1M 2>/dev/null || true
 # rm -f /EMPTY
