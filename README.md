@@ -101,6 +101,7 @@ gh release upload v1.0.0 images/debian-13/debian-13-custom.qcow2
 | Repo | Purpose |
 |------|---------|
 | [bootstrap](https://github.com/homestak-dev/bootstrap) | Entry point - curl\|bash setup |
+| [site-config](https://github.com/homestak-dev/site-config) | Site-specific secrets and configuration |
 | [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
 | [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine |
 | [tofu](https://github.com/homestak-dev/tofu) | VM provisioning (consumes images) |
