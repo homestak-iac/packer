@@ -55,12 +55,24 @@ Each template:
 
 ## cleanup.sh Responsibilities
 
+- **Pre-configures grub-pc** for non-interactive kernel operations (debconf-set-selections)
 - Clears apt cache and lists
 - Resets cloud-init state (`cloud-init clean --logs`)
 - Truncates machine-id, hostname (regenerated on boot)
 - Removes SSH host keys (regenerated on boot)
 - Blacklists unnecessary kernel modules (cfg80211, floppy, joydev, psmouse, pcspkr)
 - Rebuilds initramfs
+
+### grub-pc Configuration
+
+The grub-pc debconf pre-configuration is critical for automation compatibility:
+
+```bash
+# Set in cleanup.sh - prevents interactive prompts during kernel removal
+echo "grub-pc grub-pc/install_devices string /dev/vda" | debconf-set-selections
+```
+
+**Why this matters**: When `lae.proxmox` (or similar tools) removes old Debian kernels after PVE installation, apt would normally prompt for grub device selection. This pre-configuration allows kernel operations to complete non-interactively.
 
 ## Related Projects
 
@@ -77,10 +89,22 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization:
 
 ## Prerequisites
 
-- Packer with QEMU plugin (`packer init`)
+- **Packer 1.7+** from HashiCorp (Debian's packaged version is too old for HCL2 `required_plugins`)
+- QEMU plugin installed via `packer init`
 - KVM/QEMU with nested virtualization
-- SSH key at `~/.ssh/id_rsa` (used for cloud-init auth during build)
+- SSH key for build authentication (configurable via `ssh_private_key_file` variable, defaults to `~/.ssh/id_rsa`)
 - ~10GB disk space for cached base images
+
+### Packer Installation
+
+Debian's packaged packer (1.6.x) doesn't support HCL2 `required_plugins`. Install from HashiCorp:
+
+```bash
+# Add HashiCorp repo and install
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list
+apt update && apt install packer
+```
 
 ## Conventions
 

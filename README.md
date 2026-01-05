@@ -16,6 +16,7 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization.
 - **Pre-installed qemu-guest-agent** - ~16s boot vs ~35s with cloud-init install
 - **Blacklisted modules** - No unnecessary drivers (wireless, floppy, joystick, etc.)
 - **Smart publish** - Checksum-based copy skips unchanged images
+- **lae.proxmox compatible** - grub-pc pre-configured for non-interactive kernel removal
 
 ## Project Structure
 
@@ -66,6 +67,12 @@ Images exclude unnecessary kernel modules for headless VMs:
 - `joydev` - Joystick device
 - `psmouse` - PS/2 mouse
 - `pcspkr` - PC speaker
+
+## Prerequisites
+
+- **Packer 1.7+** from HashiCorp (Debian's 1.6.x doesn't support HCL2 `required_plugins`)
+- KVM/QEMU with nested virtualization
+- SSH key at `~/.ssh/id_rsa` (or set `ssh_private_key_file` variable)
 
 ## Build Times
 
