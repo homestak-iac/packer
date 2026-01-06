@@ -5,6 +5,23 @@ set -e
 
 echo "Cleaning up for templating..."
 
+# Pre-configure grub-pc to avoid interactive prompts during kernel operations
+# Without this, apt will prompt for device selection when removing kernels
+# (e.g., when lae.proxmox removes old Debian kernels after PVE install)
+# Use /dev/vda for virtio (Proxmox/QEMU default) with /dev/sda fallback
+if dpkg -l grub-pc >/dev/null 2>&1; then
+    echo "Configuring grub-pc for non-interactive kernel operations..."
+    if [ -b /dev/vda ]; then
+        GRUB_DEVICE="/dev/vda"
+    elif [ -b /dev/sda ]; then
+        GRUB_DEVICE="/dev/sda"
+    else
+        GRUB_DEVICE="/dev/vda"  # Default for cloud VMs
+    fi
+    echo "grub-pc grub-pc/install_devices string ${GRUB_DEVICE}" | debconf-set-selections
+    echo "grub-pc grub-pc/install_devices_empty boolean false" | debconf-set-selections
+fi
+
 # Clean apt cache
 apt-get clean
 rm -rf /var/lib/apt/lists/*

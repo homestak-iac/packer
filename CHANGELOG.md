@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **grub-pc debconf pre-configuration** - Images now pre-configure `grub-pc/install_devices` to `/dev/vda`, enabling non-interactive kernel removal when using `lae.proxmox` or similar automation tools (#1)
+
+### Changed
+
+- SSH key path now configurable via `ssh_private_key_file` variable (defaults to `/root/.ssh/id_rsa`)
+- cloud-init/user-data updated with SSH keys for multiple build hosts
+
+### Documentation
+
+- Added grub-pc configuration details to CLAUDE.md
+- Added Packer 1.7+ requirement (Debian's 1.6.x doesn't support HCL2 `required_plugins`)
+- Added prerequisites section to README.md
+
 ## v0.5.0-rc1 - 2026-01-04
 
 Consolidated pre-release with cloud images.

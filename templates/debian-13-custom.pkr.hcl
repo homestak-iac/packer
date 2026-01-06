@@ -12,6 +12,12 @@ variable "output_name" {
   default = "debian-13-custom.qcow2"
 }
 
+variable "ssh_private_key_file" {
+  type    = string
+  default = "/root/.ssh/id_rsa"
+  description = "Path to SSH private key for packer to connect to build VM"
+}
+
 source "qemu" "debian" {
   # Use Debian cloud image as base
   iso_url         = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
@@ -35,7 +41,7 @@ source "qemu" "debian" {
   communicator = "ssh"
   ssh_username = "root"
   ssh_timeout  = "10m"
-  ssh_private_key_file = "/root/.ssh/id_rsa"
+  ssh_private_key_file = var.ssh_private_key_file
 
   # Cloud-init needs NoCloud datasource
   cd_files = ["./cloud-init/*"]
