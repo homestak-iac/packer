@@ -43,19 +43,8 @@ templates/*.pkr.hcl
 images/*/*.qcow2
     ↓ ./publish.sh
 /var/lib/vz/template/iso/*-custom.img
-    ↓ tofu apply
-VMs boot in ~16s
-```
-
-## Using with Tofu
-
-The tofu `proxmox-file` module supports local images:
-
-```hcl
-module "cloud_image" {
-  source        = "../../proxmox-file"
-  local_file_id = "local:iso/debian-12-custom.img"
-}
+    ↓ iac-driver provisions VMs
+VMs boot in ~16s (vs ~35s with generic cloud images)
 ```
 
 ## Module Blacklist
@@ -110,8 +99,7 @@ gh release upload v1.0.0 images/debian-13/debian-13-custom.qcow2
 | [bootstrap](https://github.com/homestak-dev/bootstrap) | Entry point - curl\|bash setup |
 | [site-config](https://github.com/homestak-dev/site-config) | Site-specific secrets and configuration |
 | [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
-| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine |
-| [tofu](https://github.com/homestak-dev/tofu) | VM provisioning (consumes images) |
+| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine (builds images, provisions VMs) |
 
 ## License
 

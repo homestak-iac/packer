@@ -40,8 +40,8 @@ templates/*.pkr.hcl
 images/*/*.qcow2
     ↓ ./publish.sh (rsync -c)
 /var/lib/vz/template/iso/*-custom.img
-    ↓ tofu apply (proxmox-file module)
-VMs boot in ~16s
+    ↓ iac-driver provisions VMs
+VMs boot in ~16s (vs ~35s with generic cloud images)
 ```
 
 ## Template Anatomy
@@ -83,9 +83,8 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization:
 | [bootstrap](https://github.com/homestak-dev/bootstrap) | Entry point - curl\|bash setup |
 | [site-config](https://github.com/homestak-dev/site-config) | Site-specific secrets and configuration |
 | [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
-| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine |
+| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine (builds images, provisions VMs) |
 | [packer](https://github.com/homestak-dev/packer) | This project - custom cloud images |
-| [tofu](https://github.com/homestak-dev/tofu) | VM provisioning (consumes images) |
 
 ## Prerequisites
 
