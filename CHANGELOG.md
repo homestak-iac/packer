@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8 - 2026-01-07
+
+No changes - version bump for unified release.
+
 ## v0.7 - 2026-01-06
 
 ### Documentation
