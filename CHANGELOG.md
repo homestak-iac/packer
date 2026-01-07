@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9 - 2026-01-07
+
+### Features
+
+- Add `debian-13-pve` PVE-ready image template (#12)
+  - Pre-installs Proxmox VE packages for faster nested PVE deployment
+  - Creates `/etc/pve-packages-preinstalled` marker for ansible detection
+  - ~17 min time savings per nested-pve deployment
+- Add compressed publishing support in `publish.sh`
+
 ## v0.8 - 2026-01-07
 
 No changes - version bump for unified release.
