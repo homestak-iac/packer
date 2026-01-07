@@ -18,12 +18,20 @@ for src in images/*/*.qcow2; do
     destname="$(basename "$src" .qcow2).img"
     dest="${DEST_DIR}/${destname}"
 
-    if rsync -c --info=skip1,name1 "$src" "$dest" | grep -q .; then
-        echo "  $src -> $dest (updated)"
-        updated=$((updated + 1))
-    else
+    # Check if destination exists and is newer than source
+    if [[ -f "$dest" && "$dest" -nt "$src" ]]; then
         echo "  $src (unchanged)"
+        continue
     fi
+
+    # Compress and copy using qemu-img convert
+    # This reclaims sparse space and applies zlib compression
+    src_size=$(du -h "$src" | cut -f1)
+    echo "  $src ($src_size) -> $dest (compressing...)"
+    qemu-img convert -c -O qcow2 "$src" "$dest"
+    dest_size=$(du -h "$dest" | cut -f1)
+    echo "    compressed: $src_size -> $dest_size"
+    updated=$((updated + 1))
 done
 
 echo ""
