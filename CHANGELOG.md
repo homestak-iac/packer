@@ -1,12 +1,12 @@
 # Changelog
 
-## v0.7.0-rc1 - 2026-01-06
+## v0.7 - 2026-01-06
 
 ### Documentation
 
 - Remove direct tofu references from documentation
 
-## v0.6.0-rc1 - 2026-01-06
+## v0.6 - 2026-01-06
 
 ### Fixed
 
