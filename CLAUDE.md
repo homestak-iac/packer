@@ -113,7 +113,7 @@ apt update && apt install packer
 |----------|-----------|-----------|---------|
 | `debian-12-custom` | ~1.9 GB | ~16s | Base Debian 12 with qemu-guest-agent |
 | `debian-13-custom` | ~1.2 GB | ~16s | Base Debian 13 with qemu-guest-agent |
-| `debian-13-pve` | ~4-5 GB | ~16s | PVE-ready with pre-installed packages |
+| `debian-13-pve` | ~6 GB (~3.5 GB compressed) | ~16s | PVE-ready with pre-installed packages |
 
 ### debian-13-pve (PVE-ready Image)
 
