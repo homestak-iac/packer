@@ -22,10 +22,12 @@ packer/
 ├── build.sh              # Interactive build script (logs to logs/)
 ├── publish.sh            # Checksum-based copy to Proxmox storage
 ├── templates/            # Packer HCL templates
-│   ├── debian-12-custom.pkr.hcl
-│   └── debian-13-custom.pkr.hcl
+│   ├── debian-12-custom.pkr.hcl   # Base Debian 12 image
+│   ├── debian-13-custom.pkr.hcl   # Base Debian 13 image
+│   └── debian-13-pve.pkr.hcl      # PVE-ready image (pre-installed packages)
 ├── scripts/
-│   └── cleanup.sh        # Template prep (cloud-init reset, module blacklist)
+│   ├── cleanup.sh        # Template prep (cloud-init reset, module blacklist)
+│   └── pve-cleanup.sh    # PVE-specific cleanup (extends cleanup.sh)
 ├── cloud-init/           # Build-time cloud-init (NoCloud datasource)
 ├── images/               # Built .qcow2 images (git-ignored)
 ├── cache/                # Downloaded base images (git-ignored)
@@ -105,12 +107,34 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://
 apt update && apt install packer
 ```
 
+## Available Templates
+
+| Template | Image Size | Boot Time | Purpose |
+|----------|-----------|-----------|---------|
+| `debian-12-custom` | ~1.9 GB | ~16s | Base Debian 12 with qemu-guest-agent |
+| `debian-13-custom` | ~1.2 GB | ~16s | Base Debian 13 with qemu-guest-agent |
+| `debian-13-pve` | ~4-5 GB | ~16s | PVE-ready with pre-installed packages |
+
+### debian-13-pve (PVE-ready Image)
+
+Pre-installs Proxmox VE packages to dramatically reduce nested-pve deployment time:
+- Proxmox VE repository configured
+- Packages: `proxmox-ve`, `postfix`, `open-iscsi`, `chrony`
+- Debian kernel remains default (ansible switches later)
+- Creates `/etc/pve-packages-preinstalled` marker for ansible detection
+
+**Build requirements:**
+- 20 GB disk space (vs 10 GB for base images)
+- ~15-20 min build time (vs ~2 min for base images)
+
+**Time savings:** ~17 minutes per nested-pve deployment (skip package download/install)
+
 ## Conventions
 
-- Template names: `debian-{version}-custom.pkr.hcl`
-- Output names: `debian-{version}-custom.qcow2` → published as `.img`
+- Template names: `debian-{version}-{variant}.pkr.hcl`
+- Output names: `debian-{version}-{variant}.qcow2` → published as `.img`
 - Build logs: `logs/{template}.{timestamp}.log`
-- Build time: ~1.5-2 minutes per image
+- Build time: ~1.5-2 min (base), ~15-20 min (PVE)
 
 ## License
 
