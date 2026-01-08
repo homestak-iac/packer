@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10 - 2026-01-08
+
+### Documentation
+
+- Add third-party acknowledgments for hashicorp/qemu builder
+
+### CI/CD
+
+- Add GitHub Actions workflow for `packer fmt` and `packer validate`
+
+### Housekeeping
+
+- Enable secret scanning and Dependabot
+
 ## v0.9 - 2026-01-07
 
 ### Features
