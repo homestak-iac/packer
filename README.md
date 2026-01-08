@@ -92,6 +92,12 @@ gh release upload v1.0.0 images/debian-12/debian-12-custom.qcow2
 gh release upload v1.0.0 images/debian-13/debian-13-custom.qcow2
 ```
 
+## Third-Party Acknowledgments
+
+| Dependency | Purpose | License |
+|------------|---------|---------|
+| [hashicorp/qemu](https://github.com/hashicorp/packer-plugin-qemu) | QEMU builder plugin for Packer | MPL-2.0 |
+
 ## Related Repos
 
 | Repo | Purpose |
