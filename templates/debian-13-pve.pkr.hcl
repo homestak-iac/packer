@@ -14,7 +14,7 @@ variable "output_name" {
 
 variable "ssh_private_key_file" {
   type        = string
-  default     = "/root/.ssh/id_rsa"
+  default     = "~/.ssh/id_rsa"
   description = "Path to SSH private key for packer to connect to build VM"
 }
 
