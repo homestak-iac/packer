@@ -17,6 +17,11 @@ jobs:
         with:
           version: 1.11.0
 
+      - name: Create dummy SSH key for validation
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keygen -t rsa -f ~/.ssh/id_rsa -N "" -q
+
       - name: Validate templates
         run: |
           for template in templates/*.pkr.hcl; do
