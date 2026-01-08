@@ -13,8 +13,8 @@ variable "output_name" {
 }
 
 variable "ssh_private_key_file" {
-  type    = string
-  default = "/root/.ssh/id_rsa"
+  type        = string
+  default     = "/root/.ssh/id_rsa"
   description = "Path to SSH private key for packer to connect to build VM"
 }
 
@@ -37,10 +37,10 @@ source "qemu" "debian" {
   disk_size   = "10G"
 
   # Network - user mode networking with SSH forwarding
-  net_device   = "virtio-net"
-  communicator = "ssh"
-  ssh_username = "root"
-  ssh_timeout  = "10m"
+  net_device           = "virtio-net"
+  communicator         = "ssh"
+  ssh_username         = "root"
+  ssh_timeout          = "10m"
   ssh_private_key_file = var.ssh_private_key_file
 
   # Cloud-init needs NoCloud datasource

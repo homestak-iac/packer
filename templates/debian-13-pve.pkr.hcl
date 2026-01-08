@@ -37,10 +37,10 @@ source "qemu" "debian" {
   disk_size   = "20G"
 
   # Network - user mode networking with SSH forwarding
-  net_device       = "virtio-net"
-  communicator     = "ssh"
-  ssh_username     = "root"
-  ssh_timeout      = "20m"
+  net_device           = "virtio-net"
+  communicator         = "ssh"
+  ssh_username         = "root"
+  ssh_timeout          = "20m"
   ssh_private_key_file = var.ssh_private_key_file
 
   # Cloud-init needs NoCloud datasource
