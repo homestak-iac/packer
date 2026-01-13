@@ -3,6 +3,24 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Generate SHA256 checksum for built image
+generate_checksum() {
+    local image_dir="$1"
+    local image_name="$2"
+    local image_path="${image_dir}/${image_name}.qcow2"
+    local checksum_file="${image_dir}/SHA256SUMS"
+
+    if [[ ! -f "$image_path" ]]; then
+        echo "Warning: Image not found at $image_path"
+        return 1
+    fi
+
+    echo "Generating SHA256 checksum..."
+    (cd "$image_dir" && sha256sum "${image_name}.qcow2" > SHA256SUMS)
+    echo "Checksum saved to: $checksum_file"
+    cat "$checksum_file"
+}
+
 # Find available templates
 templates=(templates/*.pkr.hcl)
 
@@ -46,3 +64,10 @@ packer build -force "$template" 2>&1 | tee "$logfile"
 
 echo ""
 echo "Build complete. Log saved to: $logfile"
+
+# Generate checksum for the built image
+image_dir="images/${name}"
+if [[ -d "$image_dir" ]]; then
+    echo ""
+    generate_checksum "$image_dir" "$name"
+fi
