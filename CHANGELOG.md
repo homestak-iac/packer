@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.18 - 2026-01-13
+
+### Features
+
+- Add SHA256 checksums for image releases (#22)
+  - `build.sh` generates per-image checksums after each build
+  - New `checksums.sh` script for generate/verify/show operations
+  - `publish.sh` copies SHA256SUMS alongside images
+
+### CI/CD
+
+- Add `.github/workflows/copy-images.yml` for cross-release image copying
+  - Enables `release.sh packer --copy` automation
+  - Downloads assets from source release, uploads to target
+
 ## v0.16 - 2026-01-11
 
 - Release alignment with homestak v0.16
