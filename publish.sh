@@ -43,3 +43,17 @@ elif [[ $updated -gt 0 ]]; then
 else
     echo "All $found image(s) up to date"
 fi
+
+# Copy checksum files
+checksum_count=0
+for checksum in images/*/SHA256SUMS; do
+    [[ -f "$checksum" ]] || continue
+    image_name=$(basename "$(dirname "$checksum")")
+    dest="${DEST_DIR}/${image_name}.SHA256SUMS"
+    cp "$checksum" "$dest"
+    checksum_count=$((checksum_count + 1))
+done
+
+if [[ $checksum_count -gt 0 ]]; then
+    echo "Copied $checksum_count checksum file(s)"
+fi

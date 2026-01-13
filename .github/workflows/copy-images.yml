@@ -1,0 +1,89 @@
+name: Copy Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_release:
+        description: 'Source release tag (e.g., v0.17)'
+        required: true
+        type: string
+      target_release:
+        description: 'Target release tag (e.g., v0.18)'
+        required: true
+        type: string
+
+jobs:
+  copy-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Validate inputs
+        run: |
+          if [[ ! "${{ inputs.source_release }}" =~ ^v[0-9]+\.[0-9]+ ]]; then
+            echo "Error: Invalid source release format. Expected vX.Y (e.g., v0.17)"
+            exit 1
+          fi
+          if [[ ! "${{ inputs.target_release }}" =~ ^v[0-9]+\.[0-9]+ ]]; then
+            echo "Error: Invalid target release format. Expected vX.Y (e.g., v0.18)"
+            exit 1
+          fi
+
+      - name: Check source release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${{ inputs.source_release }}" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Error: Source release ${{ inputs.source_release }} not found"
+            exit 1
+          fi
+
+      - name: Check target release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${{ inputs.target_release }}" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Error: Target release ${{ inputs.target_release }} not found"
+            echo "Create the release first with: gh release create ${{ inputs.target_release }}"
+            exit 1
+          fi
+
+      - name: List source assets
+        id: list-assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Assets in ${{ inputs.source_release }}:"
+          gh release view "${{ inputs.source_release }}" --repo ${{ github.repository }} --json assets --jq '.assets[].name'
+
+      - name: Download assets from source release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p assets
+          gh release download "${{ inputs.source_release }}" \
+            --repo ${{ github.repository }} \
+            --dir assets
+          ls -la assets/
+
+      - name: Upload assets to target release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in assets/*; do
+            if [[ -f "$file" ]]; then
+              echo "Uploading: $(basename "$file")"
+              gh release upload "${{ inputs.target_release }}" \
+                "$file" \
+                --repo ${{ github.repository }} \
+                --clobber
+            fi
+          done
+
+      - name: Verify upload
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Assets in ${{ inputs.target_release }}:"
+          gh release view "${{ inputs.target_release }}" --repo ${{ github.repository }} --json assets --jq '.assets[].name'
