@@ -2,13 +2,13 @@
 
 ## v0.19 - Unreleased
 
-### Fixed
+### Investigated
 
-- Optimize guest agent boot time on debian-13-pve image (#13)
-  - Move network fixup from `bootcmd` to `runcmd` (runs after networking)
-  - Disable non-essential PVE services at boot (pvestatd, postfix, open-iscsi)
-  - Add systemd drop-in to prioritize qemu-guest-agent.service
-  - Expected improvement: ~135s → ~30-45s guest agent response time
+- Guest agent boot time on debian-13-pve (#13)
+  - Tested: service disabling, guest agent priority, bootcmd→runcmd
+  - Result: No improvement (133s vs 135s baseline)
+  - Root cause likely cloud-init or nested virt overhead, not service contention
+  - No code changes - investigation documented in issue
 
 ## v0.18 - 2026-01-13
 
