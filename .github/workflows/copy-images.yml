@@ -30,7 +30,7 @@ jobs:
             exit 1
           fi
 
-      - name: Check source release exists
+      - name: Check source release exists and has images
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -38,6 +38,16 @@ jobs:
             echo "Error: Source release ${{ inputs.source_release }} not found"
             exit 1
           fi
+
+          # Check source has image assets (not just SHA256SUMS)
+          ASSET_COUNT=$(gh release view "${{ inputs.source_release }}" --repo ${{ github.repository }} --json assets --jq '[.assets[] | select(.name | endswith(".img") or endswith(".qcow2"))] | length')
+          if [[ "$ASSET_COUNT" -eq 0 ]]; then
+            echo "Error: Source release ${{ inputs.source_release }} has no image assets"
+            echo "Available assets:"
+            gh release view "${{ inputs.source_release }}" --repo ${{ github.repository }} --json assets --jq '.assets[].name'
+            exit 1
+          fi
+          echo "Found $ASSET_COUNT image(s) in source release"
 
       - name: Check target release exists
         env:
@@ -87,3 +97,34 @@ jobs:
         run: |
           echo "Assets in ${{ inputs.target_release }}:"
           gh release view "${{ inputs.target_release }}" --repo ${{ github.repository }} --json assets --jq '.assets[].name'
+
+      - name: Update latest tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Updating 'latest' tag to point to ${{ inputs.target_release }}..."
+
+          # Get the commit SHA for the target release tag
+          TARGET_SHA=$(gh api repos/${{ github.repository }}/git/refs/tags/${{ inputs.target_release }} --jq '.object.sha' 2>/dev/null || echo "")
+
+          if [[ -z "$TARGET_SHA" ]]; then
+            echo "Warning: Could not get SHA for ${{ inputs.target_release }}, skipping latest tag update"
+            exit 0
+          fi
+
+          # Check if latest tag exists
+          if gh api repos/${{ github.repository }}/git/refs/tags/latest >/dev/null 2>&1; then
+            # Update existing tag
+            gh api -X PATCH repos/${{ github.repository }}/git/refs/tags/latest \
+              -f sha="$TARGET_SHA" \
+              -f force=true
+            echo "Updated 'latest' tag to $TARGET_SHA"
+          else
+            # Create new tag
+            gh api -X POST repos/${{ github.repository }}/git/refs \
+              -f ref="refs/tags/latest" \
+              -f sha="$TARGET_SHA"
+            echo "Created 'latest' tag pointing to $TARGET_SHA"
+          fi
+
+          echo "✓ 'latest' tag now points to ${{ inputs.target_release }}"
