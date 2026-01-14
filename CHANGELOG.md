@@ -1,6 +1,22 @@
 # Changelog
 
-## v0.19 - Unreleased
+## v0.20 - Unreleased
+
+### Features
+
+- Add per-template cleanup scripts (#11)
+  - New `scripts/cleanup-common.sh` with shared cleanup functions
+  - Per-template scripts: `debian-12-custom.cleanup.sh`, `debian-13-custom.cleanup.sh`, `debian-13-pve.cleanup.sh`
+  - Templates use `fileexists()` for script discovery with fallback to `cleanup.sh`
+  - PVE-specific cleanup: removes enterprise repo, adds cloud-init bootcmd for network fix
+
+- Include version details in image names (#8)
+  - New `scripts/detect-versions.sh` detects Debian and PVE versions during build
+  - Images renamed with version info: `deb12.8-custom.qcow2`, `deb13.1-pve9.2-custom.qcow2`
+  - Backward-compatible symlinks maintain old names (e.g., `debian-12-custom.qcow2`)
+  - `publish.sh` creates symlinks in destination for tofu/site-config compatibility
+
+## v0.19 - 2026-01-14
 
 ### Investigated
 

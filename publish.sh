@@ -12,6 +12,8 @@ found=0
 updated=0
 for src in images/*/*.qcow2; do
     [[ -f "$src" ]] || continue
+    # Skip symlinks (compatibility links)
+    [[ -L "$src" ]] && continue
     found=$((found + 1))
 
     # debian-12-custom.qcow2 -> debian-12-custom.img
@@ -56,4 +58,25 @@ done
 
 if [[ $checksum_count -gt 0 ]]; then
     echo "Copied $checksum_count checksum file(s)"
+fi
+
+# Create backward-compatible symlinks for versioned images
+# This allows tofu/site-config to reference images by template name (debian-12-custom.img)
+symlink_count=0
+for versioned_file in images/*/.versioned-name; do
+    [[ -f "$versioned_file" ]] || continue
+    image_dir=$(dirname "$versioned_file")
+    template_name=$(basename "$image_dir")
+    versioned_name=$(cat "$versioned_file")
+
+    # Create symlink: debian-12-custom.img -> deb12.8-custom.img
+    if [[ "$template_name" != "$versioned_name" ]]; then
+        ln -sf "${versioned_name}.img" "${DEST_DIR}/${template_name}.img"
+        echo "  Created symlink: ${template_name}.img -> ${versioned_name}.img"
+        symlink_count=$((symlink_count + 1))
+    fi
+done
+
+if [[ $symlink_count -gt 0 ]]; then
+    echo "Created $symlink_count compatibility symlink(s)"
 fi

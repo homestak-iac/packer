@@ -102,6 +102,18 @@ build {
     ]
   }
 
+  # Detect versions for image naming
+  provisioner "shell" {
+    script = "${path.root}/../scripts/detect-versions.sh"
+  }
+
+  # Download version info for build script
+  provisioner "file" {
+    source      = "/tmp/image-version.txt"
+    destination = "${path.root}/../images/debian-13-pve/image-version.txt"
+    direction   = "download"
+  }
+
   # Clean up for templating (uses per-template script if available)
   provisioner "shell" {
     script = local.cleanup_script
