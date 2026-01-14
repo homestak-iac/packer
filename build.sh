@@ -106,25 +106,39 @@ if [[ ${#templates[@]} -eq 0 ]]; then
     exit 1
 fi
 
-# Display menu
-echo "Available templates:"
-echo ""
-for i in "${!templates[@]}"; do
-    name=$(basename "${templates[$i]}" .pkr.hcl)
-    printf "  %d) %s\n" $((i + 1)) "$name"
-done
-echo ""
+# Check for command-line argument (non-interactive mode)
+if [[ $# -gt 0 ]]; then
+    name="$1"
+    template="templates/${name}.pkr.hcl"
+    if [[ ! -f "$template" ]]; then
+        echo "Error: Template not found: $template"
+        echo "Available templates:"
+        for t in templates/*.pkr.hcl; do
+            echo "  $(basename "$t" .pkr.hcl)"
+        done
+        exit 1
+    fi
+else
+    # Interactive mode - display menu
+    echo "Available templates:"
+    echo ""
+    for i in "${!templates[@]}"; do
+        tname=$(basename "${templates[$i]}" .pkr.hcl)
+        printf "  %d) %s\n" $((i + 1)) "$tname"
+    done
+    echo ""
 
-# Get selection
-read -p "Select template [1-${#templates[@]}]: " selection
+    # Get selection
+    read -p "Select template [1-${#templates[@]}]: " selection
 
-if [[ ! "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#templates[@]} ]]; then
-    echo "Invalid selection"
-    exit 1
+    if [[ ! "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#templates[@]} ]]; then
+        echo "Invalid selection"
+        exit 1
+    fi
+
+    template="${templates[$((selection - 1))]}"
+    name=$(basename "$template" .pkr.hcl)
 fi
-
-template="${templates[$((selection - 1))]}"
-name=$(basename "$template" .pkr.hcl)
 timestamp=$(date +%Y%m%d-%H%M%S)
 logfile="logs/${name}.${timestamp}.log"
 
@@ -143,7 +157,18 @@ echo ""
 echo "Build complete. Log saved to: $logfile"
 
 # Post-build: rename image with version info and generate checksum
-image_dir="images/${name}"
+# Output directory follows template pattern:
+# debian-12-custom -> images/debian-12
+# debian-13-custom -> images/debian-13
+# debian-13-pve -> images/debian-13-pve
+if [[ "$name" == *-custom ]]; then
+    # Strip "-custom" suffix for directory (debian-12-custom -> debian-12)
+    dir_name="${name%-custom}"
+else
+    # Keep full name for non-custom templates (debian-13-pve)
+    dir_name="$name"
+fi
+image_dir="images/${dir_name}"
 if [[ -d "$image_dir" ]]; then
     # Rename with version info (if available)
     rename_with_version "$image_dir" "$name" || true
