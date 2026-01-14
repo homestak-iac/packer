@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.19 - Unreleased
+
+### Investigated
+
+- Guest agent boot time on debian-13-pve (#13)
+  - Tested: service disabling, guest agent priority, bootcmd→runcmd
+  - Result: No improvement (133s vs 135s baseline)
+  - Root cause likely cloud-init or nested virt overhead, not service contention
+  - No code changes - investigation documented in issue
+
 ## v0.18 - 2026-01-13
 
 ### Features
