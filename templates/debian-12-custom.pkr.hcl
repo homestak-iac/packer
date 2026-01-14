@@ -18,6 +18,11 @@ variable "ssh_private_key_file" {
   description = "Path to SSH private key for packer to connect to build VM"
 }
 
+locals {
+  template_name  = "debian-12-custom"
+  cleanup_script = fileexists("${path.root}/../scripts/${local.template_name}.cleanup.sh") ? "${path.root}/../scripts/${local.template_name}.cleanup.sh" : "${path.root}/../scripts/cleanup.sh"
+}
+
 source "qemu" "debian" {
   # Use Debian cloud image as base
   iso_url         = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
@@ -73,8 +78,8 @@ build {
     ]
   }
 
-  # Clean up for templating
+  # Clean up for templating (uses per-template script if available)
   provisioner "shell" {
-    script = "scripts/cleanup.sh"
+    script = local.cleanup_script
   }
 }
