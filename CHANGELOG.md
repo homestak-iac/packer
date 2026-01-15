@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+### Features
+
+- Add cache management options to build.sh (#33)
+  - `--clean-cache`: Clear cached base images before building
+  - `--auto-update`: Automatically clear stale cache and retry on checksum mismatch
+  - `--help`: Show usage information
+  - Clear error message with remediation suggestions on checksum failure
+
 ### Fixed
+
+- Fix redundant -pve suffix in versioned image names (#34)
+  - `debian-13-pve` now produces `deb13.x-pve9.x.qcow2` instead of `deb13.x-pve9.x-pve.qcow2`
 
 - Fix cleanup script sourcing for per-template structure (#32)
   - Upload `cleanup-common.sh` to VM via file provisioner before sourcing

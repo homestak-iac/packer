@@ -3,6 +3,95 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# -----------------------------------------------------------------------------
+# Cache Management Options
+# -----------------------------------------------------------------------------
+
+CLEAN_CACHE=false
+AUTO_UPDATE=false
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
+
+Build packer images with optional cache management.
+
+Options:
+  --clean-cache    Clear cached base images before building
+  --auto-update    Automatically clear stale cache and retry on checksum mismatch
+  --help, -h       Show this help message
+
+Arguments:
+  TEMPLATE         Template name (e.g., debian-12-custom). If omitted, shows menu.
+
+Examples:
+  $(basename "$0")                           # Interactive menu
+  $(basename "$0") debian-12-custom          # Build specific template
+  $(basename "$0") --clean-cache debian-13-pve  # Fresh build, no cache
+  $(basename "$0") --auto-update debian-12-custom  # Auto-retry on stale cache
+
+Environment:
+  SSH_KEY_FILE     Path to SSH key (default: generates ephemeral key)
+EOF
+    exit 0
+}
+
+clean_cache() {
+    local template_name="$1"
+
+    # Map template to cache file
+    # debian-12-custom, debian-13-custom -> debian-{12,13}-generic-amd64.qcow2
+    # debian-13-pve -> debian-13-generic-amd64.qcow2
+    local debian_version
+    debian_version=$(echo "$template_name" | grep -oP 'debian-\K[0-9]+')
+    local cache_file="cache/debian-${debian_version}-generic-amd64.qcow2"
+
+    if [[ -f "$cache_file" ]]; then
+        echo "Clearing cached base image: $cache_file"
+        rm -f "$cache_file"
+    else
+        echo "No cached base image found for $template_name"
+    fi
+}
+
+clean_all_cache() {
+    echo "Clearing all cached base images..."
+    rm -f cache/*.qcow2 2>/dev/null || true
+    echo "Cache cleared."
+}
+
+# Parse command-line options
+POSITIONAL_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --clean-cache)
+            CLEAN_CACHE=true
+            shift
+            ;;
+        --auto-update)
+            AUTO_UPDATE=true
+            shift
+            ;;
+        --help|-h)
+            usage
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information."
+            exit 1
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${POSITIONAL_ARGS[@]+"${POSITIONAL_ARGS[@]}"}"
+
+# -----------------------------------------------------------------------------
+# SSH Key Handling
+# -----------------------------------------------------------------------------
+
 # SSH key handling - generates ephemeral keypair or uses existing key
 # Usage: SSH_KEY_FILE=~/.ssh/id_rsa ./build.sh  (use existing key)
 #        ./build.sh                              (generate ephemeral key)
@@ -72,10 +161,17 @@ generate_versioned_name() {
     variant=$(echo "$template_name" | sed 's/debian-[0-9]*-//')
 
     # Build versioned name
-    # Format: debX.Y-variant or debX.Y-pveA.B-variant
+    # Format: debX.Y-variant or debX.Y-pveA.B[-variant]
+    # When variant is "pve" and pve_version exists, omit redundant suffix
     local versioned_name
     if [[ -n "$pve_version" ]]; then
-        versioned_name="deb${debian_version}-pve${pve_version}-${variant}"
+        if [[ "$variant" == "pve" ]]; then
+            # Variant already captured in pve version (e.g., deb13.3-pve9.1)
+            versioned_name="deb${debian_version}-pve${pve_version}"
+        else
+            # Non-pve variant with PVE installed (e.g., deb13.3-pve9.1-custom)
+            versioned_name="deb${debian_version}-pve${pve_version}-${variant}"
+        fi
     else
         versioned_name="deb${debian_version}-${variant}"
     fi
@@ -197,14 +293,66 @@ echo "Building: $template"
 echo "Log file: $logfile"
 echo ""
 
+# Handle --clean-cache: clear cache before building
+if [[ "$CLEAN_CACHE" == "true" ]]; then
+    clean_cache "$name"
+    echo ""
+fi
+
 # Setup SSH key (ephemeral by default)
 setup_ssh_key
 
-# Run packer with logging and SSH key variables
-packer build -force \
-    -var "ssh_private_key_file=$SSH_PRIVATE_KEY" \
-    -var "ssh_public_key=$SSH_PUBLIC_KEY_CONTENT" \
-    "$template" 2>&1 | tee "$logfile"
+# Function to run packer build
+run_packer_build() {
+    packer build -force \
+        -var "ssh_private_key_file=$SSH_PRIVATE_KEY" \
+        -var "ssh_public_key=$SSH_PUBLIC_KEY_CONTENT" \
+        "$template" 2>&1 | tee "$logfile"
+    return "${PIPESTATUS[0]}"
+}
+
+# Function to check if failure was due to checksum mismatch
+is_checksum_error() {
+    grep -q "Checksum did not match" "$logfile" 2>/dev/null || \
+    grep -q "checksum.*mismatch" "$logfile" 2>/dev/null || \
+    grep -q "SHA256 checksum" "$logfile" 2>/dev/null
+}
+
+# Run packer build with optional auto-update retry
+set +e  # Temporarily allow errors for build retry logic
+if run_packer_build; then
+    BUILD_SUCCESS=true
+else
+    BUILD_SUCCESS=false
+
+    if [[ "$AUTO_UPDATE" == "true" ]] && is_checksum_error; then
+        echo ""
+        echo "Checksum mismatch detected. Clearing cache and retrying..."
+        clean_cache "$name"
+        echo ""
+
+        if run_packer_build; then
+            BUILD_SUCCESS=true
+        fi
+    fi
+fi
+set -e  # Re-enable strict error handling
+
+if [[ "$BUILD_SUCCESS" != "true" ]]; then
+    echo ""
+    echo "Build failed. Log saved to: $logfile"
+
+    # Check if it was a checksum error and suggest options
+    if is_checksum_error && [[ "$AUTO_UPDATE" != "true" ]]; then
+        echo ""
+        echo "This appears to be a checksum mismatch (upstream image may have changed)."
+        echo "Options:"
+        echo "  1. Retry with --auto-update: $(basename "$0") --auto-update $name"
+        echo "  2. Clear cache manually: rm -f cache/debian-*-generic-amd64.qcow2"
+        echo "  3. Clear cache and rebuild: $(basename "$0") --clean-cache $name"
+    fi
+    exit 1
+fi
 
 echo ""
 echo "Build complete. Log saved to: $logfile"
