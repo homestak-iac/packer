@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.22 - 2026-01-15
+
 ### Features
 
 - Add cache management options to build.sh (#33)
