@@ -15,6 +15,11 @@
 - Fix redundant -pve suffix in versioned image names (#34)
   - `debian-13-pve` now produces `deb13.x-pve9.x.qcow2` instead of `deb13.x-pve9.x-pve.qcow2`
 
+- Fix copy-images workflow to support `latest` as target (.github#30)
+  - Relaxed validation to accept `latest` OR `vX.Y` format
+  - Auto-create `latest` release if it doesn't exist
+  - Fix `force` parameter type in tag update API call (use `-F` for boolean)
+
 - Fix cleanup script sourcing for per-template structure (#32)
   - Upload `cleanup-common.sh` to VM via file provisioner before sourcing
   - Scripts now source from `/tmp/cleanup-common.sh` on build VM

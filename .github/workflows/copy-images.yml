@@ -25,8 +25,9 @@ jobs:
             echo "Error: Invalid source release format. Expected vX.Y (e.g., v0.17)"
             exit 1
           fi
-          if [[ ! "${{ inputs.target_release }}" =~ ^v[0-9]+\.[0-9]+ ]]; then
-            echo "Error: Invalid target release format. Expected vX.Y (e.g., v0.18)"
+          # Target can be 'latest' or vX.Y format
+          if [[ "${{ inputs.target_release }}" != "latest" ]] && [[ ! "${{ inputs.target_release }}" =~ ^v[0-9]+\.[0-9]+ ]]; then
+            echo "Error: Invalid target release format. Expected 'latest' or vX.Y (e.g., v0.18)"
             exit 1
           fi
 
@@ -49,13 +50,30 @@ jobs:
           fi
           echo "Found $ASSET_COUNT image(s) in source release"
 
-      - name: Check target release exists
+      - name: Ensure target release exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! gh release view "${{ inputs.target_release }}" --repo ${{ github.repository }} >/dev/null 2>&1; then
-            echo "Error: Target release ${{ inputs.target_release }} not found"
-            echo "Create the release first with: gh release create ${{ inputs.target_release }}"
+          TARGET="${{ inputs.target_release }}"
+
+          if gh release view "$TARGET" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Target release $TARGET exists"
+          elif [[ "$TARGET" == "latest" ]]; then
+            # Create 'latest' release if it doesn't exist
+            echo "Creating 'latest' release..."
+            SOURCE_SHA=$(gh api repos/${{ github.repository }}/git/refs/tags/${{ inputs.source_release }} --jq '.object.sha' 2>/dev/null || echo "")
+            if [[ -z "$SOURCE_SHA" ]]; then
+              echo "Error: Could not get SHA for source release"
+              exit 1
+            fi
+            gh release create latest --repo ${{ github.repository }} \
+              --title "Latest Release" \
+              --notes "Points to latest stable images" \
+              --target "$SOURCE_SHA"
+            echo "Created 'latest' release"
+          else
+            echo "Error: Target release $TARGET not found"
+            echo "Create the release first with: gh release create $TARGET"
             exit 1
           fi
 
@@ -102,29 +120,44 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Updating 'latest' tag to point to ${{ inputs.target_release }}..."
+          TARGET="${{ inputs.target_release }}"
+          SOURCE="${{ inputs.source_release }}"
 
-          # Get the commit SHA for the target release tag
-          TARGET_SHA=$(gh api repos/${{ github.repository }}/git/refs/tags/${{ inputs.target_release }} --jq '.object.sha' 2>/dev/null || echo "")
+          # When target is 'latest', point tag to source release commit
+          # When target is versioned, point tag to target release commit
+          if [[ "$TARGET" == "latest" ]]; then
+            REF_TAG="$SOURCE"
+            echo "Updating 'latest' tag to point to $SOURCE (source release)..."
+          else
+            REF_TAG="$TARGET"
+            echo "Updating 'latest' tag to point to $TARGET..."
+          fi
+
+          # Get the commit SHA for the reference tag
+          TARGET_SHA=$(gh api repos/${{ github.repository }}/git/refs/tags/$REF_TAG --jq '.object.sha' 2>/dev/null || echo "")
 
           if [[ -z "$TARGET_SHA" ]]; then
-            echo "Warning: Could not get SHA for ${{ inputs.target_release }}, skipping latest tag update"
+            echo "Warning: Could not get SHA for $REF_TAG, skipping latest tag update"
             exit 0
           fi
 
+          echo "Reference SHA: $TARGET_SHA"
+
           # Check if latest tag exists
           if gh api repos/${{ github.repository }}/git/refs/tags/latest >/dev/null 2>&1; then
-            # Update existing tag
+            # Update existing tag (use -F for boolean type)
+            echo "Updating existing 'latest' tag..."
             gh api -X PATCH repos/${{ github.repository }}/git/refs/tags/latest \
               -f sha="$TARGET_SHA" \
-              -f force=true
+              -F force=true
             echo "Updated 'latest' tag to $TARGET_SHA"
           else
             # Create new tag
+            echo "Creating 'latest' tag..."
             gh api -X POST repos/${{ github.repository }}/git/refs \
               -f ref="refs/tags/latest" \
               -f sha="$TARGET_SHA"
             echo "Created 'latest' tag pointing to $TARGET_SHA"
           fi
 
-          echo "✓ 'latest' tag now points to ${{ inputs.target_release }}"
+          echo "✓ 'latest' tag now points to $REF_TAG ($TARGET_SHA)"
