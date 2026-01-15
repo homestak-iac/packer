@@ -201,6 +201,18 @@ apparmor="DENIED" operation="open" name="/proc/cmdline"
 - Build logs: `logs/{template}.{timestamp}.log`
 - Build time: ~1.5-2 min (base), ~15-20 min (PVE)
 
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/ci.yml`) validates all templates on push/PR:
+
+1. Generates ephemeral SSH keypair
+2. Runs `packer init`, `packer fmt -check`, and `packer validate` on each template
+3. Passes required variables: `ssh_public_key`, `ssh_private_key_file`
+
+**When modifying templates:** Ensure CI passes before merging. The workflow validates the template structure at `templates/*/template.pkr.hcl`.
+
+**When adding new variables:** If adding required variables without defaults, update `.github/workflows/ci.yml` to pass them during validation.
+
 ## License
 
 Apache 2.0 - see [LICENSE](LICENSE)
