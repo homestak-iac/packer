@@ -35,7 +35,7 @@ packer/
 ├── shared/               # Shared resources across templates
 │   ├── cloud-init/       # Build-time cloud-init (NoCloud datasource)
 │   │   ├── meta-data
-│   │   └── user-data
+│   │   └── user-data.pkrtpl  # Template with dynamic SSH key injection
 │   └── scripts/
 │       ├── cleanup-common.sh     # Shared cleanup functions
 │       └── detect-versions.sh    # Debian/PVE version detection
@@ -109,8 +109,18 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization:
 - **Packer 1.7+** from HashiCorp (Debian's packaged version is too old for HCL2 `required_plugins`)
 - QEMU plugin installed via `packer init`
 - KVM/QEMU with nested virtualization
-- SSH key for build authentication (configurable via `ssh_private_key_file` variable, defaults to `~/.ssh/id_rsa`)
 - ~10GB disk space for cached base images
+
+### SSH Key Handling
+
+By default, `build.sh` generates an ephemeral ed25519 keypair for the build, eliminating the need to configure SSH keys. The keypair is automatically cleaned up after the build.
+
+To use an existing key instead:
+```bash
+SSH_KEY_FILE=~/.ssh/id_rsa ./build.sh
+```
+
+The public key (e.g., `~/.ssh/id_rsa.pub`) must exist alongside the private key.
 
 ### Packer Installation
 

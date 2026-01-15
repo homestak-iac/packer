@@ -3,6 +3,53 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# SSH key handling - generates ephemeral keypair or uses existing key
+# Usage: SSH_KEY_FILE=~/.ssh/id_rsa ./build.sh  (use existing key)
+#        ./build.sh                              (generate ephemeral key)
+SSH_KEY_FILE="${SSH_KEY_FILE:-ephemeral}"
+SSH_TMPDIR=""
+
+setup_ssh_key() {
+    if [[ "$SSH_KEY_FILE" == "ephemeral" ]]; then
+        echo "Generating ephemeral SSH keypair for build..."
+        SSH_TMPDIR=$(mktemp -d)
+        ssh-keygen -t ed25519 -f "$SSH_TMPDIR/key" -N "" -q
+        SSH_PRIVATE_KEY="$SSH_TMPDIR/key"
+        SSH_PUBLIC_KEY_CONTENT=$(cat "$SSH_TMPDIR/key.pub")
+        echo "  Private key: $SSH_PRIVATE_KEY"
+    else
+        # Use existing key
+        SSH_PRIVATE_KEY=$(eval echo "$SSH_KEY_FILE")  # Expand ~
+        SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY}.pub"
+
+        if [[ ! -f "$SSH_PRIVATE_KEY" ]]; then
+            echo "Error: SSH private key not found: $SSH_PRIVATE_KEY"
+            echo ""
+            echo "Options:"
+            echo "  1. Generate a key: ssh-keygen -t ed25519"
+            echo "  2. Use ephemeral key: unset SSH_KEY_FILE (default)"
+            echo "  3. Specify different key: SSH_KEY_FILE=/path/to/key ./build.sh"
+            exit 1
+        fi
+
+        if [[ ! -f "$SSH_PUBLIC_KEY_FILE" ]]; then
+            echo "Error: SSH public key not found: $SSH_PUBLIC_KEY_FILE"
+            echo "Expected public key alongside private key"
+            exit 1
+        fi
+
+        SSH_PUBLIC_KEY_CONTENT=$(cat "$SSH_PUBLIC_KEY_FILE")
+        echo "Using existing SSH key: $SSH_PRIVATE_KEY"
+    fi
+}
+
+cleanup_ssh_key() {
+    if [[ -n "$SSH_TMPDIR" && -d "$SSH_TMPDIR" ]]; then
+        rm -rf "$SSH_TMPDIR"
+    fi
+}
+trap cleanup_ssh_key EXIT
+
 # Generate versioned image name from version file
 # Outputs: deb12.8-custom or deb13.1-pve9.2-custom
 generate_versioned_name() {
@@ -150,8 +197,14 @@ echo "Building: $template"
 echo "Log file: $logfile"
 echo ""
 
-# Run packer with logging
-packer build -force "$template" 2>&1 | tee "$logfile"
+# Setup SSH key (ephemeral by default)
+setup_ssh_key
+
+# Run packer with logging and SSH key variables
+packer build -force \
+    -var "ssh_private_key_file=$SSH_PRIVATE_KEY" \
+    -var "ssh_public_key=$SSH_PUBLIC_KEY_CONTENT" \
+    "$template" 2>&1 | tee "$logfile"
 
 echo ""
 echo "Build complete. Log saved to: $logfile"
