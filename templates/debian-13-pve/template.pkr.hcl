@@ -115,6 +115,6 @@ build {
 
   # Clean up for templating
   provisioner "shell" {
-    script = "${path.root}/scripts/cleanup.sh"
+    script = "${path.root}/cleanup.sh"
   }
 }

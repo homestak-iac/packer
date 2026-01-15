@@ -7,7 +7,7 @@
 set -e
 
 # Source common cleanup functions
-source "${BASH_SOURCE%/*}/../../../shared/scripts/cleanup-common.sh"
+source "${BASH_SOURCE%/*}/../../shared/scripts/cleanup-common.sh"
 
 echo "=== Debian 12 Custom Image Cleanup ==="
 

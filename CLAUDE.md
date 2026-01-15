@@ -25,13 +25,13 @@ packer/
 ├── templates/            # Per-template directories
 │   ├── debian-12-custom/
 │   │   ├── template.pkr.hcl      # Base Debian 12 image
-│   │   └── scripts/cleanup.sh    # Template-specific cleanup
+│   │   └── cleanup.sh            # Template-specific cleanup
 │   ├── debian-13-custom/
 │   │   ├── template.pkr.hcl      # Base Debian 13 image
-│   │   └── scripts/cleanup.sh
+│   │   └── cleanup.sh
 │   └── debian-13-pve/
 │       ├── template.pkr.hcl      # PVE-ready image (pre-installed packages)
-│       └── scripts/cleanup.sh    # PVE-specific cleanup
+│       └── cleanup.sh            # PVE-specific cleanup
 ├── shared/               # Shared resources across templates
 │   ├── cloud-init/       # Build-time cloud-init (NoCloud datasource)
 │   │   ├── meta-data
@@ -61,7 +61,7 @@ VMs boot in ~16s (vs ~35s with generic cloud images)
 
 Each template directory contains:
 - `template.pkr.hcl` - Packer template definition
-- `scripts/cleanup.sh` - Template-specific cleanup (sources shared cleanup-common.sh)
+- `cleanup.sh` - Template-specific cleanup (sources shared cleanup-common.sh)
 
 Build process:
 1. Downloads Debian cloud image to `cache/` (cached after first run)

@@ -5,7 +5,7 @@
 ### Changed
 
 - Consolidate templates into per-template directories (#19)
-  - New structure: `templates/{name}/template.pkr.hcl` with per-template `scripts/cleanup.sh`
+  - New structure: `templates/{name}/template.pkr.hcl` with per-template `cleanup.sh`
   - Shared files moved to `shared/`: `cloud-init/`, `scripts/cleanup-common.sh`, `scripts/detect-versions.sh`
   - `build.sh` updated for new template discovery pattern
   - Cleaner separation between shared and template-specific files
