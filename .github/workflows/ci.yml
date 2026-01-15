@@ -29,5 +29,8 @@ jobs:
             echo "=== Validating $template ==="
             packer init "$template"
             packer fmt -check "$template"
-            packer validate -var "ssh_public_key=$SSH_PUBLIC_KEY" "$template"
+            packer validate \
+              -var "ssh_public_key=$SSH_PUBLIC_KEY" \
+              -var "ssh_private_key_file=$HOME/.ssh/id_ed25519" \
+              "$template"
           done
