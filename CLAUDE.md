@@ -109,7 +109,23 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization:
 - **Packer 1.7+** from HashiCorp (Debian's packaged version is too old for HCL2 `required_plugins`)
 - QEMU plugin installed via `packer init`
 - KVM/QEMU with nested virtualization
+- **KVM group membership** - User must be in the `kvm` group to access `/dev/kvm`
 - ~10GB disk space for cached base images
+
+### KVM Permissions
+
+Packer builds require access to `/dev/kvm`. If you see this error:
+
+```
+qemu-system-x86_64: Could not access KVM kernel module: Permission denied
+```
+
+Add your user to the `kvm` group:
+
+```bash
+sudo usermod -aG kvm $USER
+# Then re-login or run: newgrp kvm
+```
 
 ### SSH Key Handling
 
