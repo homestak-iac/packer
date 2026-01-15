@@ -164,6 +164,25 @@ SHA256 checksums are generated automatically after each build using per-image `.
 2. `checksums.sh generate` regenerates all checksums if needed
 3. `.sha256` files uploaded alongside images in GitHub releases
 
+## Known Issues
+
+### AppArmor Denials During Boot (Noise)
+
+Debian 13 Trixie images may log AppArmor denials for `dhclient` and `chronyd` during first boot:
+
+```
+apparmor="DENIED" operation="open" name="/proc/1/cgroup"
+apparmor="DENIED" operation="open" name="/proc/cmdline"
+```
+
+**Root cause**: Kernel-userspace AppArmor ABI mismatch. Proxmox VE 9 ships kernel 6.8 with AppArmor 4.0 ABI, but userspace `apparmor.d` profiles expect 3.x ABI. The kernel rejects newer profile features it doesn't understand.
+
+**Impact**: None. Services function correctly - these are "noise" denials that don't affect functionality.
+
+**Status**: Upstream issue. Will resolve when Proxmox ships kernel with AppArmor 4.0 ABI support or userspace profiles add backward compatibility.
+
+**Reference**: [Proxmox Forum Thread](https://forum.proxmox.com/threads/apparmor-denials-for-dhclient-and-chronyd.163189/)
+
 ## Conventions
 
 - Template names: `debian-{version}-{variant}.pkr.hcl`
