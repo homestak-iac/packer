@@ -18,6 +18,11 @@ variable "ssh_private_key_file" {
   description = "Path to SSH private key for packer to connect to build VM"
 }
 
+variable "ssh_public_key" {
+  type        = string
+  description = "SSH public key content for build VM authentication (passed by build.sh)"
+}
+
 locals {
   template_name = "debian-13-custom"
 }
@@ -47,8 +52,13 @@ source "qemu" "debian" {
   ssh_timeout          = "10m"
   ssh_private_key_file = var.ssh_private_key_file
 
-  # Cloud-init needs NoCloud datasource
-  cd_files = ["shared/cloud-init/*"]
+  # Cloud-init with dynamic SSH key injection
+  cd_content = {
+    "meta-data" = file("../../shared/cloud-init/meta-data")
+    "user-data" = templatefile("../../shared/cloud-init/user-data.pkrtpl", {
+      ssh_public_key = var.ssh_public_key
+    })
+  }
   cd_label = "cidata"
 
   # Headless mode (no display)
