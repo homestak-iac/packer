@@ -73,11 +73,10 @@ rename_with_version() {
     return 0
 }
 
-# Generate SHA256 checksum for built image
+# Generate SHA256 checksum for built image (per-image .sha256 file)
 generate_checksum() {
     local image_dir="$1"
     local template_name="$2"
-    local checksum_file="${image_dir}/SHA256SUMS"
 
     # Check if we have a versioned name
     local image_name="$template_name"
@@ -86,6 +85,7 @@ generate_checksum() {
     fi
 
     local image_path="${image_dir}/${image_name}.qcow2"
+    local checksum_file="${image_dir}/${image_name}.qcow2.sha256"
 
     if [[ ! -f "$image_path" ]]; then
         echo "Warning: Image not found at $image_path"
@@ -93,7 +93,7 @@ generate_checksum() {
     fi
 
     echo "Generating SHA256 checksum..."
-    (cd "$image_dir" && sha256sum "${image_name}.qcow2" > SHA256SUMS)
+    (cd "$image_dir" && sha256sum "${image_name}.qcow2" > "${image_name}.qcow2.sha256")
     echo "Checksum saved to: $checksum_file"
     cat "$checksum_file"
 }

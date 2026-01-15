@@ -1,5 +1,6 @@
 #!/bin/bash
 # Generate or verify SHA256 checksums for packer images
+# Uses per-image .sha256 files (Debian convention)
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -8,62 +9,76 @@ usage() {
     echo "Usage: $0 <command>"
     echo ""
     echo "Commands:"
-    echo "  generate    Generate SHA256SUMS for all images"
+    echo "  generate    Generate .sha256 files for all images"
     echo "  verify      Verify checksums for all images"
     echo "  show        Display current checksums"
     echo ""
 }
 
 generate_checksums() {
-    local output_file="${1:-SHA256SUMS}"
     local found=0
 
-    echo "Generating checksums for all images..."
+    echo "Generating per-image checksums..."
     echo ""
-
-    # Clear or create output file
-    > "$output_file"
 
     for image in images/*/*.qcow2; do
         [[ -f "$image" ]] || continue
+        # Skip symlinks (backward-compat links)
+        [[ -L "$image" ]] && continue
         found=$((found + 1))
 
-        # Generate checksum with relative path
-        sha256sum "$image" >> "$output_file"
-        echo "  $image"
+        local checksum_file="${image}.sha256"
+        local dir=$(dirname "$image")
+        local basename=$(basename "$image")
+
+        # Generate checksum with just filename (not path)
+        (cd "$dir" && sha256sum "$basename" > "${basename}.sha256")
+        echo "  $checksum_file"
     done
 
     if [[ $found -eq 0 ]]; then
         echo "No images found in images/"
-        rm -f "$output_file"
         return 1
     fi
 
     echo ""
-    echo "Generated checksums for $found image(s): $output_file"
-    echo ""
-    cat "$output_file"
+    echo "Generated checksums for $found image(s)"
 }
 
 verify_checksums() {
-    local checksum_file="${1:-SHA256SUMS}"
+    local found=0
+    local failed=0
 
-    if [[ ! -f "$checksum_file" ]]; then
-        echo "Checksum file not found: $checksum_file"
-        echo "Run '$0 generate' first"
+    echo "Verifying per-image checksums..."
+    echo ""
+
+    for checksum_file in images/*/*.sha256; do
+        [[ -f "$checksum_file" ]] || continue
+        found=$((found + 1))
+
+        local dir=$(dirname "$checksum_file")
+
+        echo -n "  $checksum_file: "
+        if (cd "$dir" && sha256sum -c "$(basename "$checksum_file")" --quiet 2>/dev/null); then
+            echo "OK"
+        else
+            echo "FAILED"
+            failed=$((failed + 1))
+        fi
+    done
+
+    if [[ $found -eq 0 ]]; then
+        echo "No checksum files found"
+        echo "Run '$0 generate' first or build images with build.sh"
         return 1
     fi
 
-    echo "Verifying checksums from: $checksum_file"
     echo ""
-
-    if sha256sum -c "$checksum_file"; then
-        echo ""
-        echo "All checksums verified successfully"
+    if [[ $failed -eq 0 ]]; then
+        echo "All $found checksum(s) verified successfully"
         return 0
     else
-        echo ""
-        echo "Checksum verification FAILED"
+        echo "FAILED: $failed of $found checksum(s) failed verification"
         return 1
     fi
 }
@@ -74,20 +89,24 @@ show_checksums() {
     echo "Current image checksums:"
     echo ""
 
-    for checksum_file in images/*/SHA256SUMS; do
+    for checksum_file in images/*/*.sha256; do
         [[ -f "$checksum_file" ]] || continue
         found=$((found + 1))
 
-        echo "=== $(dirname "$checksum_file") ==="
+        echo "=== $checksum_file ==="
         cat "$checksum_file"
         echo ""
     done
 
-    if [[ -f "SHA256SUMS" ]]; then
-        echo "=== Combined SHA256SUMS ==="
-        cat SHA256SUMS
-        found=$((found + 1))
-    fi
+    # Also show legacy SHA256SUMS if present
+    for legacy_file in images/*/SHA256SUMS SHA256SUMS; do
+        if [[ -f "$legacy_file" ]]; then
+            echo "=== $legacy_file (legacy) ==="
+            cat "$legacy_file"
+            echo ""
+            found=$((found + 1))
+        fi
+    done
 
     if [[ $found -eq 0 ]]; then
         echo "No checksum files found"
@@ -99,10 +118,10 @@ show_checksums() {
 # Main
 case "${1:-}" in
     generate)
-        generate_checksums "${2:-SHA256SUMS}"
+        generate_checksums
         ;;
     verify)
-        verify_checksums "${2:-SHA256SUMS}"
+        verify_checksums
         ;;
     show)
         show_checksums
