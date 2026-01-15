@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Generate per-image `.sha256` checksum files instead of consolidated `SHA256SUMS` (#25)
+  - Follows Debian cloud image convention: `debian-12-custom.qcow2.sha256`
+  - `build.sh` creates `.sha256` file after each build
+  - `checksums.sh` updated for per-image file handling
+  - Legacy `SHA256SUMS` files still displayed by `checksums.sh show`
+
 ## v0.20 - 2026-01-14
 
 ### Features
