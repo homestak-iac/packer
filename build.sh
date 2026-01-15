@@ -98,8 +98,8 @@ generate_checksum() {
     cat "$checksum_file"
 }
 
-# Find available templates
-templates=(templates/*.pkr.hcl)
+# Find available templates (per-template directory structure)
+templates=(templates/*/template.pkr.hcl)
 
 if [[ ${#templates[@]} -eq 0 ]]; then
     echo "No templates found in templates/"
@@ -109,12 +109,12 @@ fi
 # Check for command-line argument (non-interactive mode)
 if [[ $# -gt 0 ]]; then
     name="$1"
-    template="templates/${name}.pkr.hcl"
+    template="templates/${name}/template.pkr.hcl"
     if [[ ! -f "$template" ]]; then
         echo "Error: Template not found: $template"
         echo "Available templates:"
-        for t in templates/*.pkr.hcl; do
-            echo "  $(basename "$t" .pkr.hcl)"
+        for t in templates/*/template.pkr.hcl; do
+            echo "  $(basename "$(dirname "$t")")"
         done
         exit 1
     fi
@@ -123,7 +123,7 @@ else
     echo "Available templates:"
     echo ""
     for i in "${!templates[@]}"; do
-        tname=$(basename "${templates[$i]}" .pkr.hcl)
+        tname=$(basename "$(dirname "${templates[$i]}")")
         printf "  %d) %s\n" $((i + 1)) "$tname"
     done
     echo ""
@@ -137,7 +137,7 @@ else
     fi
 
     template="${templates[$((selection - 1))]}"
-    name=$(basename "$template" .pkr.hcl)
+    name=$(basename "$(dirname "$template")")
 fi
 timestamp=$(date +%Y%m%d-%H%M%S)
 logfile="logs/${name}.${timestamp}.log"
