@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fix cleanup script sourcing for per-template structure (#32)
+  - Upload `cleanup-common.sh` to VM via file provisioner before sourcing
+  - Scripts now source from `/tmp/cleanup-common.sh` on build VM
+
 ### Changed
 
 - Dynamic SSH key injection for packer builds (#6)
@@ -21,6 +27,12 @@
   - `build.sh` creates `.sha256` file after each build
   - `checksums.sh` updated for per-image file handling
   - Legacy `SHA256SUMS` files still displayed by `checksums.sh show`
+
+### Documentation
+
+- Add CI/CD section to CLAUDE.md documenting GitHub Actions workflow
+- Add Known Issues section for AppArmor denials on Debian 13 (#27)
+- Add KVM permissions requirement to prerequisites
 
 ## v0.20 - 2026-01-14
 
