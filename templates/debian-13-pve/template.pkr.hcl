@@ -123,6 +123,12 @@ build {
     direction   = "download"
   }
 
+  # Upload shared cleanup functions
+  provisioner "file" {
+    source      = "${path.root}/../../shared/scripts/cleanup-common.sh"
+    destination = "/tmp/cleanup-common.sh"
+  }
+
   # Clean up for templating
   provisioner "shell" {
     script = "${path.root}/cleanup.sh"
