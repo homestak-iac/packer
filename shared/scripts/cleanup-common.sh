@@ -1,10 +1,12 @@
 #!/bin/bash
 # cleanup-common.sh - Shared cleanup functions for packer templates
 #
-# Source this file from per-template cleanup scripts:
-#   source "${BASH_SOURCE%/*}/cleanup-common.sh"
+# This file is uploaded to /tmp/cleanup-common.sh on the build VM by a
+# packer file provisioner, then sourced by per-template cleanup.sh scripts.
 #
-# Then call the functions you need, or use cleanup_all for standard cleanup.
+# Usage in cleanup.sh:
+#   source /tmp/cleanup-common.sh
+#   cleanup_all  # Or call individual functions
 
 set -e
 
