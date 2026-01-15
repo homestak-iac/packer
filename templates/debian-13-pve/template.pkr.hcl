@@ -19,8 +19,7 @@ variable "ssh_private_key_file" {
 }
 
 locals {
-  template_name  = "debian-13-pve"
-  cleanup_script = fileexists("${path.root}/../scripts/${local.template_name}.cleanup.sh") ? "${path.root}/../scripts/${local.template_name}.cleanup.sh" : "${path.root}/../scripts/cleanup.sh"
+  template_name = "debian-13-pve"
 }
 
 source "qemu" "debian" {
@@ -49,7 +48,7 @@ source "qemu" "debian" {
   ssh_private_key_file = var.ssh_private_key_file
 
   # Cloud-init needs NoCloud datasource
-  cd_files = ["./cloud-init/*"]
+  cd_files = ["shared/cloud-init/*"]
   cd_label = "cidata"
 
   # Headless mode (no display)
@@ -104,18 +103,18 @@ build {
 
   # Detect versions for image naming
   provisioner "shell" {
-    script = "${path.root}/../scripts/detect-versions.sh"
+    script = "${path.root}/../../shared/scripts/detect-versions.sh"
   }
 
   # Download version info for build script
   provisioner "file" {
     source      = "/tmp/image-version.txt"
-    destination = "${path.root}/../images/debian-13-pve/image-version.txt"
+    destination = "${path.root}/../../images/debian-13-pve/image-version.txt"
     direction   = "download"
   }
 
-  # Clean up for templating (uses per-template script if available)
+  # Clean up for templating
   provisioner "shell" {
-    script = local.cleanup_script
+    script = "${path.root}/scripts/cleanup.sh"
   }
 }

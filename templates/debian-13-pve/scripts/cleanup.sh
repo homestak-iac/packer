@@ -1,12 +1,12 @@
 #!/bin/bash
-# debian-13-pve.cleanup.sh - Cleanup script for PVE-ready Debian 13 image
+# cleanup.sh - Cleanup script for PVE-ready Debian 13 image
 #
 # Sources common functions and adds PVE-specific cleanup steps.
 
 set -e
 
 # Source common cleanup functions
-source "${BASH_SOURCE%/*}/cleanup-common.sh"
+source "${BASH_SOURCE%/*}/../../../shared/scripts/cleanup-common.sh"
 
 echo "=== Debian 13 PVE Image Cleanup ==="
 

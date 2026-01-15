@@ -1,5 +1,5 @@
 #!/bin/bash
-# debian-12-custom.cleanup.sh - Cleanup script for Debian 12 custom image
+# cleanup.sh - Cleanup script for Debian 12 custom image
 #
 # Sources common functions and runs standard cleanup.
 # Add Debian 12 specific cleanup steps here if needed.
@@ -7,7 +7,7 @@
 set -e
 
 # Source common cleanup functions
-source "${BASH_SOURCE%/*}/cleanup-common.sh"
+source "${BASH_SOURCE%/*}/../../../shared/scripts/cleanup-common.sh"
 
 echo "=== Debian 12 Custom Image Cleanup ==="
 
