@@ -216,7 +216,64 @@ rename_with_version() {
     return 0
 }
 
+# Split large image into parts for GitHub release upload (2GB limit)
+# Uses ~1.9GB parts to stay safely under limit with margin
+split_large_image() {
+    local image_dir="$1"
+    local image_name="$2"
+    local image_path="${image_dir}/${image_name}.qcow2"
+
+    # GitHub release asset limit is 2GB; use 1.9GB for safety margin
+    local threshold=$((1900 * 1024 * 1024))  # 1.9 GiB in bytes
+    local split_size="1900m"  # split command format
+
+    if [[ ! -f "$image_path" ]]; then
+        return 0  # Nothing to split
+    fi
+
+    local size
+    size=$(stat -c%s "$image_path" 2>/dev/null || stat -f%z "$image_path" 2>/dev/null)
+
+    if [[ -z "$size" ]]; then
+        echo "Warning: Could not determine image size"
+        return 0
+    fi
+
+    if [[ "$size" -le "$threshold" ]]; then
+        echo "Image size ($(numfmt --to=iec "$size" 2>/dev/null || echo "${size} bytes")) is under 2GB, no split needed"
+        return 0
+    fi
+
+    echo ""
+    echo "Image size ($(numfmt --to=iec "$size" 2>/dev/null || echo "${size} bytes")) exceeds 2GB GitHub limit"
+    echo "Splitting into ~1.9GB parts..."
+
+    # Split into parts with .part suffix (partaa, partab, etc.)
+    (cd "$image_dir" && split -b "$split_size" "${image_name}.qcow2" "${image_name}.qcow2.part")
+
+    # Verify split created parts
+    local parts
+    parts=$(ls "${image_dir}/${image_name}.qcow2.part"* 2>/dev/null | wc -l)
+    if [[ "$parts" -eq 0 ]]; then
+        echo "Warning: Split failed, keeping original file"
+        return 1
+    fi
+
+    echo "Created $parts parts:"
+    ls -lh "${image_dir}/${image_name}.qcow2.part"* | awk '{print "  " $NF ": " $5}'
+
+    # Remove original to save space (parts can be reassembled with cat)
+    rm -f "$image_path"
+    echo "Removed original (reassemble with: cat ${image_name}.qcow2.part* > ${image_name}.qcow2)"
+
+    # Mark that this image was split
+    echo "split" > "${image_dir}/.split-status"
+
+    return 0
+}
+
 # Generate SHA256 checksum for built image (per-image .sha256 file)
+# Handles both regular images and split images
 generate_checksum() {
     local image_dir="$1"
     local template_name="$2"
@@ -229,6 +286,18 @@ generate_checksum() {
 
     local image_path="${image_dir}/${image_name}.qcow2"
     local checksum_file="${image_dir}/${image_name}.qcow2.sha256"
+
+    # Check if image was split
+    if [[ -f "${image_dir}/.split-status" ]]; then
+        echo "Generating SHA256 checksum for split image (reassembling for checksum)..."
+        # Generate checksum by piping cat output to sha256sum (doesn't create temp file)
+        local checksum
+        checksum=$(cat "${image_dir}/${image_name}.qcow2.part"* | sha256sum | awk '{print $1}')
+        echo "$checksum  ${image_name}.qcow2" > "$checksum_file"
+        echo "Checksum saved to: $checksum_file"
+        cat "$checksum_file"
+        return 0
+    fi
 
     if [[ ! -f "$image_path" ]]; then
         echo "Warning: Image not found at $image_path"
@@ -374,16 +443,26 @@ if [[ -d "$image_dir" ]]; then
     # Rename with version info (if available)
     rename_with_version "$image_dir" "$name" || true
 
-    # Generate checksum for the (possibly renamed) image
+    # Get the final image name for split and checksum
+    final_name="$name"
+    if [[ -f "${image_dir}/.versioned-name" ]]; then
+        final_name=$(cat "${image_dir}/.versioned-name")
+    fi
+
+    # Split large images for GitHub release upload (>2GB)
+    echo ""
+    split_large_image "$image_dir" "$final_name"
+
+    # Generate checksum for the (possibly split) image
     echo ""
     generate_checksum "$image_dir" "$name"
 
     # Show final image name
     echo ""
-    if [[ -f "${image_dir}/.versioned-name" ]]; then
-        versioned=$(cat "${image_dir}/.versioned-name")
-        echo "Final image: ${image_dir}/${versioned}.qcow2"
+    if [[ -f "${image_dir}/.split-status" ]]; then
+        echo "Final image: ${image_dir}/${final_name}.qcow2.part* (split for GitHub upload)"
+        echo "  Reassemble: cat ${final_name}.qcow2.part* > ${final_name}.qcow2"
     else
-        echo "Final image: ${image_dir}/${name}.qcow2"
+        echo "Final image: ${image_dir}/${final_name}.qcow2"
     fi
 fi

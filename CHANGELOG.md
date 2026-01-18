@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Add bats tests for build scripts (#39)
+  - test/build.bats - Template discovery, SSH key handling, checksums
+  - test/checksums.bats - Checksum generation and verification
+  - test/test_helper/common.bash - Shared fixtures and assertions
+  - CI workflow runs tests on push/PR
+  - `make test` target added
+
+### Features
+- Auto-split large images for GitHub release upload (#38)
+  - Images >2GB are automatically split into ~1.9GB parts
+  - Checksums generated for reassembled image
+  - Parts named: `*.qcow2.partaa`, `*.qcow2.partab`, etc.
+  - Reassemble with: `cat *.qcow2.part* > image.qcow2`
+
 ## v0.26 - 2026-01-17
 
 - Release alignment with homestak v0.26
