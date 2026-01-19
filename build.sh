@@ -168,6 +168,7 @@ generate_versioned_name() {
 
     # Extract variant from template name (e.g., "custom" from "debian-12-custom")
     local variant
+    # shellcheck disable=SC2001 # regex pattern requires sed
     variant=$(echo "$template_name" | sed 's/debian-[0-9]*-//')
 
     # Build versioned name
@@ -263,6 +264,7 @@ split_large_image() {
 
     # Verify split created parts
     local parts
+    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
     parts=$(ls "${image_dir}/${image_name}.qcow2.part"* 2>/dev/null | wc -l)
     if [[ "$parts" -eq 0 ]]; then
         echo "Warning: Split failed, keeping original file"
@@ -270,6 +272,7 @@ split_large_image() {
     fi
 
     echo "Created $parts parts:"
+    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
     ls -lh "${image_dir}/${image_name}.qcow2.part"* | awk '{print "  " $NF ": " $5}'
 
     # Remove original to save space (parts can be reassembled with cat)
@@ -351,7 +354,7 @@ else
     echo ""
 
     # Get selection
-    read -p "Select template [1-${#templates[@]}]: " selection
+    read -rp "Select template [1-${#templates[@]}]: " selection
 
     if [[ ! "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#templates[@]} ]]; then
         echo "Invalid selection"
