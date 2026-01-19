@@ -62,11 +62,13 @@ generate_checksums() {
         found=$((found + 1))
 
         local checksum_file="${image}.sha256"
-        local dir=$(dirname "$image")
-        local basename=$(basename "$image")
+        local dir
+        local img_basename
+        dir=$(dirname "$image")
+        img_basename=$(basename "$image")
 
         # Generate checksum with just filename (not path)
-        (cd "$dir" && sha256sum "$basename" > "${basename}.sha256")
+        (cd "$dir" && sha256sum "$img_basename" > "${img_basename}.sha256")
         echo "  $checksum_file"
     done
 
@@ -90,7 +92,8 @@ verify_checksums() {
         [[ -f "$checksum_file" ]] || continue
         found=$((found + 1))
 
-        local dir=$(dirname "$checksum_file")
+        local dir
+        dir=$(dirname "$checksum_file")
 
         echo -n "  $checksum_file: "
         if (cd "$dir" && sha256sum -c "$(basename "$checksum_file")" --quiet 2>/dev/null); then
