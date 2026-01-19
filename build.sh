@@ -3,6 +3,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Git-derived version (do not use hardcoded VERSION constant)
+get_version() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "dev"
+}
+
 # -----------------------------------------------------------------------------
 # Cache Management Options
 # -----------------------------------------------------------------------------
@@ -12,14 +17,15 @@ AUTO_UPDATE=false
 
 usage() {
     cat <<EOF
+build.sh $(get_version) - Build packer images with optional cache management
+
 Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
 
-Build packer images with optional cache management.
-
 Options:
+  --help, -h       Show this help message
+  --version        Show version
   --clean-cache    Clear cached base images before building
   --auto-update    Automatically clear stale cache and retry on checksum mismatch
-  --help, -h       Show this help message
 
 Arguments:
   TEMPLATE         Template name (e.g., debian-12-custom). If omitted, shows menu.
@@ -74,6 +80,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help|-h)
             usage
+            ;;
+        --version)
+            echo "build.sh $(get_version)"
+            exit 0
             ;;
         -*)
             echo "Unknown option: $1"
@@ -158,6 +168,7 @@ generate_versioned_name() {
 
     # Extract variant from template name (e.g., "custom" from "debian-12-custom")
     local variant
+    # shellcheck disable=SC2001 # regex pattern requires sed
     variant=$(echo "$template_name" | sed 's/debian-[0-9]*-//')
 
     # Build versioned name
@@ -253,6 +264,7 @@ split_large_image() {
 
     # Verify split created parts
     local parts
+    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
     parts=$(ls "${image_dir}/${image_name}.qcow2.part"* 2>/dev/null | wc -l)
     if [[ "$parts" -eq 0 ]]; then
         echo "Warning: Split failed, keeping original file"
@@ -260,6 +272,7 @@ split_large_image() {
     fi
 
     echo "Created $parts parts:"
+    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
     ls -lh "${image_dir}/${image_name}.qcow2.part"* | awk '{print "  " $NF ": " $5}'
 
     # Remove original to save space (parts can be reassembled with cat)
@@ -341,7 +354,7 @@ else
     echo ""
 
     # Get selection
-    read -p "Select template [1-${#templates[@]}]: " selection
+    read -rp "Select template [1-${#templates[@]}]: " selection
 
     if [[ ! "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#templates[@]} ]]; then
         echo "Invalid selection"
