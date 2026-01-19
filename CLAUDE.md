@@ -9,8 +9,16 @@ Packer templates for building custom Debian cloud images with pre-installed pack
 ## Quick Reference
 
 ```bash
-./build.sh       # Interactive menu to select and build a template
-./publish.sh     # Copy images to /var/lib/vz/template/iso/
+./build.sh                # Interactive menu to select and build a template
+./build.sh debian-12-custom  # Build specific template
+./publish.sh              # Copy images to /var/lib/vz/template/iso/
+./publish.sh --dry-run    # Preview what would be published
+./checksums.sh generate   # Generate checksums for all images
+
+# All scripts support --help and --version
+./build.sh --help
+./publish.sh --version
+
 packer init templates/debian-12-custom/template.pkr.hcl   # Install QEMU plugin (first time)
 packer validate templates/debian-12-custom/template.pkr.hcl  # Validate template syntax
 ```

@@ -5,6 +5,39 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Git-derived version (do not use hardcoded VERSION constant)
+get_version() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "dev"
+}
+
+show_help() {
+    cat << 'EOF'
+checksums.sh - Generate or verify SHA256 checksums for packer images
+
+Usage:
+  checksums.sh [options] <command>
+
+Options:
+  --help, -h    Show this help message
+  --version     Show version
+
+Commands:
+  generate      Generate .sha256 files for all images
+  verify        Verify checksums for all images
+  show          Display current checksums
+
+Description:
+  Manages per-image .sha256 checksum files following Debian convention.
+  Checksums are generated in the same directory as the image files.
+
+Examples:
+  ./checksums.sh generate    # Generate checksums for all built images
+  ./checksums.sh verify      # Verify all images match their checksums
+  ./checksums.sh show        # Display current checksums
+EOF
+    exit 0
+}
+
 usage() {
     echo "Usage: $0 <command>"
     echo ""
@@ -13,6 +46,7 @@ usage() {
     echo "  verify      Verify checksums for all images"
     echo "  show        Display current checksums"
     echo ""
+    echo "Use --help for more information."
 }
 
 generate_checksums() {
@@ -117,6 +151,13 @@ show_checksums() {
 
 # Main
 case "${1:-}" in
+    --help|-h)
+        show_help
+        ;;
+    --version)
+        echo "checksums.sh $(get_version)"
+        exit 0
+        ;;
     generate)
         generate_checksums
         ;;

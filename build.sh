@@ -3,6 +3,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Git-derived version (do not use hardcoded VERSION constant)
+get_version() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "dev"
+}
+
 # -----------------------------------------------------------------------------
 # Cache Management Options
 # -----------------------------------------------------------------------------
@@ -12,14 +17,15 @@ AUTO_UPDATE=false
 
 usage() {
     cat <<EOF
+build.sh $(get_version) - Build packer images with optional cache management
+
 Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
 
-Build packer images with optional cache management.
-
 Options:
+  --help, -h       Show this help message
+  --version        Show version
   --clean-cache    Clear cached base images before building
   --auto-update    Automatically clear stale cache and retry on checksum mismatch
-  --help, -h       Show this help message
 
 Arguments:
   TEMPLATE         Template name (e.g., debian-12-custom). If omitted, shows menu.
@@ -74,6 +80,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help|-h)
             usage
+            ;;
+        --version)
+            echo "build.sh $(get_version)"
+            exit 0
             ;;
         -*)
             echo "Unknown option: $1"
