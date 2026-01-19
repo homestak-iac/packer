@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.33 - 2026-01-19
+
+### Theme: Unit Testing
+
 ### Added
 - Add bats tests for publish.sh (#42)
   - test/publish.bats - Image discovery, destination transforms, versioned names
