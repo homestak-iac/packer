@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+- Add bats tests for publish.sh (#42)
+  - test/publish.bats - Image discovery, destination transforms, versioned names
+  - Tests for --help, --version, --dry-run argument parsing
+  - Tests for symlink handling and checksum file discovery
+
 ## v0.32 - 2026-01-19
 
 ### Added
