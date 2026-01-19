@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.31 - 2026-01-19
+
 ### Added
 - Add bats tests for build scripts (#39)
   - test/build.bats - Template discovery, SSH key handling, checksums
