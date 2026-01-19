@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## v0.32 - 2026-01-19
+
+### Added
+- Add `--help` and `--version` to all scripts (build.sh, publish.sh, checksums.sh) (#40)
+- Add `--dry-run` to publish.sh for previewing image publication (#40)
+- Git-derived version pattern (no hardcoded VERSION constants)
+
+### Fixed
+- Resolve shellcheck warnings in build.sh and checksums.sh (#40)
+
 ## v0.31 - 2026-01-19
 
 ### Added
