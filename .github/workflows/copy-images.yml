@@ -11,6 +11,16 @@ on:
         description: 'Target release tag (e.g., v0.18)'
         required: true
         type: string
+      notes:
+        description: 'Release notes for target (optional, for copied images)'
+        required: false
+        type: string
+        default: ''
+      sync_latest:
+        description: 'Also sync assets to latest release'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   copy-images:
@@ -109,12 +119,62 @@ jobs:
             fi
           done
 
-      - name: Verify upload
+      - name: Update target release notes
+        if: inputs.notes != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Updating release notes for ${{ inputs.target_release }}..."
+          gh release edit "${{ inputs.target_release }}" \
+            --repo ${{ github.repository }} \
+            --notes "${{ inputs.notes }}"
+          echo "✓ Release notes updated"
+
+      - name: Verify target upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Assets in ${{ inputs.target_release }}:"
           gh release view "${{ inputs.target_release }}" --repo ${{ github.repository }} --json assets --jq '.assets[].name'
+
+      - name: Sync assets to latest release
+        if: inputs.target_release != 'latest' && inputs.sync_latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Syncing assets to 'latest' release..."
+
+          # Ensure latest release exists
+          if ! gh release view latest --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Creating 'latest' release..."
+            TARGET_SHA=$(gh api repos/${{ github.repository }}/git/refs/tags/${{ inputs.target_release }} --jq '.object.sha' 2>/dev/null || echo "")
+            if [[ -z "$TARGET_SHA" ]]; then
+              echo "Warning: Could not get SHA for ${{ inputs.target_release }}, skipping latest sync"
+              exit 0
+            fi
+            gh release create latest --repo ${{ github.repository }} \
+              --title "Latest Release" \
+              --notes "Points to ${{ inputs.target_release }}" \
+              --target "$TARGET_SHA"
+          fi
+
+          # Upload assets to latest (reuse already downloaded assets)
+          for file in assets/*; do
+            if [[ -f "$file" ]]; then
+              echo "Uploading to latest: $(basename "$file")"
+              gh release upload latest \
+                "$file" \
+                --repo ${{ github.repository }} \
+                --clobber
+            fi
+          done
+
+          # Update latest release notes
+          gh release edit latest \
+            --repo ${{ github.repository }} \
+            --notes "Points to ${{ inputs.target_release }}"
+
+          echo "✓ Assets synced to 'latest' release"
 
       - name: Update latest tag
         env:
