@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.41 - 2026-01-31
+
+- Release alignment with homestak v0.41
+
 ## v0.33 - 2026-01-19
 
 ### Theme: Unit Testing
