@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+- Enhance copy-images.yml workflow (homestak-dev#146, homestak-dev#148)
+  - Add `notes` input for custom release notes when copying images
+  - Add `sync_latest` input to consolidate latest release sync
+  - Workflow now handles both versioned release and latest sync in one pass
+  - Eliminates redundant ~6GB transfer when using GHA workflow
+
 ## v0.41 - 2026-01-31
 
 - Release alignment with homestak v0.41
