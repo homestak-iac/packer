@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.43 - 2026-02-01
+
 ### Changed
 - Enhance copy-images.yml workflow (homestak-dev#146, homestak-dev#148)
   - Add `notes` input for custom release notes when copying images
