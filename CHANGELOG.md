@@ -4,6 +4,10 @@
 
 ## v0.43 - 2026-02-01
 
+- Release alignment with homestak v0.43
+
+## v0.42 - 2026-01-31
+
 ### Changed
 - Enhance copy-images.yml workflow (homestak-dev#146, homestak-dev#148)
   - Add `notes` input for custom release notes when copying images
