@@ -82,7 +82,7 @@ Build process:
 ## cleanup.sh Responsibilities
 
 - **Pre-configures grub-pc** for non-interactive kernel operations (debconf-set-selections)
-- Clears apt cache and lists
+- Clears apt cache (keeps lists for usable apt on first boot)
 - Resets cloud-init state (`cloud-init clean --logs`)
 - Truncates machine-id, hostname (regenerated on boot)
 - Removes SSH host keys (regenerated on boot)
