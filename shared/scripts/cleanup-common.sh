@@ -34,10 +34,10 @@ cleanup_grub_config() {
 }
 
 cleanup_apt() {
-    # Clean apt cache and lists
+    # Clean apt cache (downloaded .deb files) but keep lists (package metadata).
+    # Lists are small (~30MB) and avoid stale-cache issues on first boot.
     echo "Cleaning apt cache..."
     apt-get clean
-    rm -rf /var/lib/apt/lists/*
 }
 
 cleanup_cloud_init() {

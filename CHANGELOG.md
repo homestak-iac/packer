@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Keep apt lists in packer images — stop removing `/var/lib/apt/lists/*` during cleanup so VMs boot with a usable apt cache (#47)
+
 ## v0.45 - 2026-02-02
 
 - Release alignment with homestak v0.45
