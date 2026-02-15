@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- Add built image caching to `build.sh` — skip rebuild when template files and source image unchanged (#36)
+  - Cache key: composite SHA256 of source cloud image + template/shared files
+  - `--force` flag bypasses cache; cache auto-invalidates on any file change
 - Add `apt-get upgrade -y` to all build templates for security patch coverage (#50)
 
 ### Changed

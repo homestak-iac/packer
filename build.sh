@@ -14,6 +14,7 @@ get_version() {
 
 CLEAN_CACHE=false
 AUTO_UPDATE=false
+FORCE_BUILD=false
 
 usage() {
     cat <<EOF
@@ -24,6 +25,7 @@ Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
 Options:
   --help, -h       Show this help message
   --version        Show version
+  --force          Rebuild even if cache is valid
   --clean-cache    Clear cached base images before building
   --auto-update    Automatically clear stale cache and retry on checksum mismatch
 
@@ -32,8 +34,9 @@ Arguments:
 
 Examples:
   $(basename "$0")                           # Interactive menu
-  $(basename "$0") debian-12                 # Build specific template
-  $(basename "$0") --clean-cache pve-9       # Fresh build, no cache
+  $(basename "$0") debian-12                 # Build specific template (uses cache)
+  $(basename "$0") --force debian-12         # Force rebuild, ignore cache
+  $(basename "$0") --clean-cache pve-9       # Fresh build, no base image cache
   $(basename "$0") --auto-update debian-13   # Auto-retry on stale cache
 
 Environment:
@@ -74,10 +77,90 @@ clean_all_cache() {
     echo "Cache cleared."
 }
 
+# -----------------------------------------------------------------------------
+# Built Image Caching
+# -----------------------------------------------------------------------------
+
+# Compute a composite cache key from source image + template files.
+# Cache key = SHA256(source_image_checksum + template_files_hash)
+compute_cache_key() {
+    local template_name="$1"
+
+    # Files that contribute to the cache key
+    local files=(
+        "templates/${template_name}/template.pkr.hcl"
+        "templates/${template_name}/cleanup.sh"
+        "shared/scripts/cleanup-common.sh"
+        "shared/scripts/detect-versions.sh"
+        "shared/cloud-init/user-data.pkrtpl"
+        "shared/cloud-init/meta-data"
+    )
+
+    # Hash template files (sort for determinism)
+    local template_hash
+    template_hash=$(cat "${files[@]}" 2>/dev/null | sha256sum | awk '{print $1}')
+
+    # Get source cloud image checksum (from cached download)
+    local cache_file
+    cache_file=$(grep 'iso_target_path' "templates/${template_name}/template.pkr.hcl" \
+        | grep -oP '"[^"]*"' | tr -d '"')
+
+    local source_hash="none"
+    if [[ -n "$cache_file" && -f "$cache_file" ]]; then
+        source_hash=$(sha256sum "$cache_file" | awk '{print $1}')
+    fi
+
+    # Composite key: hash of both components
+    echo "${source_hash}:${template_hash}" | sha256sum | awk '{print $1}'
+}
+
+# Check if cached build is still valid. Returns 0 (cache hit) or 1 (cache miss).
+check_build_cache() {
+    local template_name="$1"
+    local cache_key_file="images/${template_name}/.cache-key"
+    local image_file="images/${template_name}/${template_name}.qcow2"
+
+    # No cache key file → miss
+    if [[ ! -f "$cache_key_file" ]]; then
+        echo "Cache miss: no .cache-key file"
+        return 1
+    fi
+
+    # No built image (and no split parts) → miss
+    if [[ ! -f "$image_file" ]] && ! ls "images/${template_name}/${template_name}.qcow2.part"* &>/dev/null; then
+        echo "Cache miss: no built image"
+        return 1
+    fi
+
+    local stored_key current_key
+    stored_key=$(cat "$cache_key_file")
+    current_key=$(compute_cache_key "$template_name")
+
+    if [[ "$stored_key" == "$current_key" ]]; then
+        echo "Cache hit: built image is up to date"
+        return 0
+    else
+        echo "Cache miss: template or source image changed"
+        return 1
+    fi
+}
+
+# Write cache key after successful build
+write_cache_key() {
+    local template_name="$1"
+    local cache_key_file="images/${template_name}/.cache-key"
+
+    compute_cache_key "$template_name" > "$cache_key_file"
+}
+
 # Parse command-line options
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --force)
+            FORCE_BUILD=true
+            shift
+            ;;
         --clean-cache)
             CLEAN_CACHE=true
             shift
@@ -304,6 +387,17 @@ if [[ "$CLEAN_CACHE" == "true" ]]; then
     echo ""
 fi
 
+# Check build cache (skip rebuild if valid, unless --force)
+if [[ "$FORCE_BUILD" != "true" ]]; then
+    if check_build_cache "$name"; then
+        echo "Skipping build (use --force to rebuild)"
+        exit 0
+    fi
+else
+    echo "Force build requested, ignoring cache"
+fi
+echo ""
+
 # Setup SSH key (ephemeral by default)
 setup_ssh_key
 
@@ -373,6 +467,10 @@ if [[ -d "$image_dir" ]]; then
     # Generate checksum for the (possibly split) image
     echo ""
     generate_checksum "$image_dir" "$name"
+
+    # Write cache key for future builds
+    write_cache_key "$name"
+    echo "Cache key written to: ${image_dir}/.cache-key"
 
     # Show final image name
     echo ""
