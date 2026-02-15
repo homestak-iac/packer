@@ -178,9 +178,9 @@ apt update && apt install packer
 
 | Template | Image Size | Boot Time | Purpose |
 |----------|-----------|-----------|---------|
-| `debian-12` | ~780 MB | ~16s | Base Debian 12 with qemu-guest-agent |
-| `debian-13` | ~590 MB | ~16s | Base Debian 13 with qemu-guest-agent |
-| `pve-9` | ~3.4 GB | ~16s | PVE-ready with pre-installed packages |
+| `debian-12` | ~600 MB | ~16s | Base Debian 12 with qemu-guest-agent |
+| `debian-13` | ~500 MB | ~16s | Base Debian 13 with qemu-guest-agent |
+| `pve-9` | ~2.8 GB | ~16s | PVE-ready with pre-installed packages |
 
 ### pve-9 (PVE-ready Image)
 
