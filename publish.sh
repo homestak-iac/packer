@@ -29,7 +29,6 @@ Description:
   using qemu-img convert.
 
   Only copies images that are newer than the destination or don't exist.
-  Creates backward-compatible symlinks for versioned images.
 
 Examples:
   ./publish.sh            # Publish all built images
@@ -71,11 +70,8 @@ found=0
 updated=0
 for src in images/*/*.qcow2; do
     [[ -f "$src" ]] || continue
-    # Skip symlinks (compatibility links)
-    [[ -L "$src" ]] && continue
     found=$((found + 1))
 
-    # debian-12-custom.qcow2 -> debian-12-custom.img
     destname="$(basename "$src" .qcow2).img"
     dest="${DEST_DIR}/${destname}"
 
@@ -132,34 +128,5 @@ if [[ $checksum_count -gt 0 ]]; then
         echo "Would copy $checksum_count checksum file(s)"
     else
         echo "Copied $checksum_count checksum file(s)"
-    fi
-fi
-
-# Create backward-compatible symlinks for versioned images
-# This allows tofu/site-config to reference images by template name (debian-12-custom.img)
-symlink_count=0
-for versioned_file in images/*/.versioned-name; do
-    [[ -f "$versioned_file" ]] || continue
-    image_dir=$(dirname "$versioned_file")
-    template_name=$(basename "$image_dir")
-    versioned_name=$(cat "$versioned_file")
-
-    # Create symlink: debian-12-custom.img -> deb12.8-custom.img
-    if [[ "$template_name" != "$versioned_name" ]]; then
-        if [[ "$DRY_RUN" == "true" ]]; then
-            echo "  [would create symlink] ${template_name}.img -> ${versioned_name}.img"
-        else
-            ln -sf "${versioned_name}.img" "${DEST_DIR}/${template_name}.img"
-            echo "  Created symlink: ${template_name}.img -> ${versioned_name}.img"
-        fi
-        symlink_count=$((symlink_count + 1))
-    fi
-done
-
-if [[ $symlink_count -gt 0 ]]; then
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo "Would create $symlink_count compatibility symlink(s)"
-    else
-        echo "Created $symlink_count compatibility symlink(s)"
     fi
 fi

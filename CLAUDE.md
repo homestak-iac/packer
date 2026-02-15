@@ -12,7 +12,7 @@ See [docs/designs/packer-pipeline.md](../docs/designs/packer-pipeline.md) for na
 
 ```bash
 ./build.sh                # Interactive menu to select and build a template
-./build.sh debian-12-custom  # Build specific template
+./build.sh debian-12      # Build specific template
 ./publish.sh              # Copy images to /var/lib/vz/template/iso/
 ./publish.sh --dry-run    # Preview what would be published
 ./checksums.sh generate   # Generate checksums for all images
@@ -21,8 +21,8 @@ See [docs/designs/packer-pipeline.md](../docs/designs/packer-pipeline.md) for na
 ./build.sh --help
 ./publish.sh --version
 
-packer init templates/debian-12-custom/template.pkr.hcl   # Install QEMU plugin (first time)
-packer validate templates/debian-12-custom/template.pkr.hcl  # Validate template syntax
+packer init templates/debian-12/template.pkr.hcl   # Install QEMU plugin (first time)
+packer validate templates/debian-12/template.pkr.hcl  # Validate template syntax
 ```
 
 ## Project Structure
@@ -33,13 +33,13 @@ packer/
 ├── publish.sh            # Checksum-based copy to Proxmox storage
 ├── checksums.sh          # Generate/verify SHA256 checksums for releases
 ├── templates/            # Per-template directories
-│   ├── debian-12-custom/
+│   ├── debian-12/
 │   │   ├── template.pkr.hcl      # Base Debian 12 image
 │   │   └── cleanup.sh            # Template-specific cleanup
-│   ├── debian-13-custom/
+│   ├── debian-13/
 │   │   ├── template.pkr.hcl      # Base Debian 13 image
 │   │   └── cleanup.sh
-│   └── debian-13-pve/
+│   └── pve-9/
 │       ├── template.pkr.hcl      # PVE-ready image (pre-installed packages)
 │       └── cleanup.sh            # PVE-specific cleanup
 ├── shared/               # Shared resources across templates
@@ -61,8 +61,8 @@ packer/
 templates/*.pkr.hcl
     ↓ ./build.sh (packer build -force)
 images/*/*.qcow2
-    ↓ ./publish.sh (rsync -c)
-/var/lib/vz/template/iso/*-custom.img
+    ↓ ./publish.sh (qemu-img convert)
+/var/lib/vz/template/iso/*.img
     ↓ iac-driver provisions VMs
 VMs boot in ~16s (vs ~35s with generic cloud images)
 ```
@@ -78,7 +78,7 @@ Build process:
 2. Boots VM with cloud-init from `shared/cloud-init/`
 3. Installs qemu-guest-agent via shell provisioner
 4. Runs version detection from `shared/scripts/detect-versions.sh`
-5. Runs template-specific `scripts/cleanup.sh`
+5. Runs template-specific `cleanup.sh`
 6. Outputs `.qcow2` to `images/<template-name>/`
 
 ## cleanup.sh Responsibilities
@@ -163,13 +163,13 @@ apt update && apt install packer
 
 | Template | Image Size | Boot Time | Purpose |
 |----------|-----------|-----------|---------|
-| `debian-12-custom` | ~1.9 GB | ~16s | Base Debian 12 with qemu-guest-agent |
-| `debian-13-custom` | ~1.2 GB | ~16s | Base Debian 13 with qemu-guest-agent |
-| `debian-13-pve` | ~6 GB (~3.5 GB compressed) | ~16s | PVE-ready with pre-installed packages |
+| `debian-12` | ~1.9 GB | ~16s | Base Debian 12 with qemu-guest-agent |
+| `debian-13` | ~1.2 GB | ~16s | Base Debian 13 with qemu-guest-agent |
+| `pve-9` | ~6 GB (~3.5 GB compressed) | ~16s | PVE-ready with pre-installed packages |
 
-### debian-13-pve (PVE-ready Image)
+### pve-9 (PVE-ready Image)
 
-Pre-installs Proxmox VE packages to dramatically reduce nested-pve deployment time:
+Pre-installs Proxmox VE packages to dramatically reduce PVE deployment time:
 - Proxmox VE repository configured
 - Packages: `proxmox-ve`, `postfix`, `open-iscsi`, `chrony`
 - Debian kernel remains default (ansible switches later)
@@ -179,7 +179,7 @@ Pre-installs Proxmox VE packages to dramatically reduce nested-pve deployment ti
 - 20 GB disk space (vs 10 GB for base images)
 - ~15-20 min build time (vs ~2 min for base images)
 
-**Time savings:** ~17 minutes per nested-pve deployment (skip package download/install)
+**Time savings:** ~17 minutes per PVE deployment (skip package download/install)
 
 ## Checksums
 
@@ -192,7 +192,7 @@ SHA256 checksums are generated automatically after each build using per-image `.
 ```
 
 **Checksum format:**
-- Per-image files: `debian-12-custom.qcow2.sha256` alongside each image
+- Per-image files: `debian-12.qcow2.sha256` alongside each image
 - Format matches Debian cloud images for easy verification
 
 **Release workflow:**
@@ -221,9 +221,9 @@ apparmor="DENIED" operation="open" name="/proc/cmdline"
 
 ## Conventions
 
-- Template names: `debian-{version}-{variant}.pkr.hcl`
-- Output names: `debian-{version}-{variant}.qcow2` → published as `.img`
-- Checksum files: `{image}.sha256` (per-image)
+- Template names: `debian-12`, `debian-13`, `pve-9` (1:1 with image names)
+- Output names: `{template}.qcow2` → published as `{template}.img`
+- Checksum files: `{image}.qcow2.sha256` (per-image)
 - Build logs: `logs/{template}.{timestamp}.log`
 - Build time: ~1.5-2 min (base), ~15-20 min (PVE)
 
