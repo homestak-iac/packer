@@ -5,6 +5,11 @@
 ### Added
 - Add built image caching to `build.sh` — skip rebuild when template files and source image unchanged (#36)
 
+### Changed
+- Compress qcow2 output after build — `qemu-img convert -c` reclaims sparse space and applies zlib compression (#54)
+  - pve-9: ~5.9 GB → ~3.4 GB, debian-12: ~1.9 GB → ~780 MB, debian-13: ~1.2 GB → ~590 MB
+  - Checksums now reflect compressed images
+
 ### Removed
 - Remove image splitting from `build.sh` — splitting moved to `release.sh packer --upload` (#52)
 - Remove `copy-images.yml` workflow — replaced by `release.sh packer --upload` (#52)
