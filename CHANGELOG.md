@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- Add `apt-get upgrade -y` to all build templates for security patch coverage (#50)
+
 ### Changed
 - Simplify image naming: drop `-custom` suffix, rename `debian-13-pve` to `pve-9` (#48)
   - Template directories: `debian-12-custom` → `debian-12`, `debian-13-custom` → `debian-13`, `debian-13-pve` → `pve-9`

@@ -79,10 +79,11 @@ source "qemu" "debian" {
 build {
   sources = ["source.qemu.debian"]
 
-  # Install qemu-guest-agent (same as base image)
+  # Update, upgrade, and install qemu-guest-agent
   provisioner "shell" {
     inline = [
       "apt-get update",
+      "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y",
       "apt-get install -y qemu-guest-agent",
     ]
   }
