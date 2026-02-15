@@ -126,8 +126,8 @@ check_build_cache() {
         return 1
     fi
 
-    # No built image (and no split parts) → miss
-    if [[ ! -f "$image_file" ]] && ! ls "images/${template_name}/${template_name}.qcow2.part"* &>/dev/null; then
+    # No built image → miss
+    if [[ ! -f "$image_file" ]]; then
         echo "Cache miss: no built image"
         return 1
     fi
@@ -240,83 +240,12 @@ cleanup_ssh_key() {
 }
 trap cleanup_ssh_key EXIT
 
-# Split large image into parts for GitHub release upload (2GB limit)
-# Uses ~1.9GB parts to stay safely under limit with margin
-split_large_image() {
-    local image_dir="$1"
-    local image_name="$2"
-    local image_path="${image_dir}/${image_name}.qcow2"
-
-    # GitHub release asset limit is 2GB; use 1.9GB for safety margin
-    local threshold=$((1900 * 1024 * 1024))  # 1.9 GiB in bytes
-    local split_size="1900m"  # split command format
-
-    if [[ ! -f "$image_path" ]]; then
-        return 0  # Nothing to split
-    fi
-
-    local size
-    size=$(stat -c%s "$image_path" 2>/dev/null || stat -f%z "$image_path" 2>/dev/null)
-
-    if [[ -z "$size" ]]; then
-        echo "Warning: Could not determine image size"
-        return 0
-    fi
-
-    if [[ "$size" -le "$threshold" ]]; then
-        echo "Image size ($(numfmt --to=iec "$size" 2>/dev/null || echo "${size} bytes")) is under 2GB, no split needed"
-        return 0
-    fi
-
-    echo ""
-    echo "Image size ($(numfmt --to=iec "$size" 2>/dev/null || echo "${size} bytes")) exceeds 2GB GitHub limit"
-    echo "Splitting into ~1.9GB parts..."
-
-    # Split into parts with .part suffix (partaa, partab, etc.)
-    (cd "$image_dir" && split -b "$split_size" "${image_name}.qcow2" "${image_name}.qcow2.part")
-
-    # Verify split created parts
-    local parts
-    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
-    parts=$(ls "${image_dir}/${image_name}.qcow2.part"* 2>/dev/null | wc -l)
-    if [[ "$parts" -eq 0 ]]; then
-        echo "Warning: Split failed, keeping original file"
-        return 1
-    fi
-
-    echo "Created $parts parts:"
-    # shellcheck disable=SC2012 # filenames are controlled, ls is safe here
-    ls -lh "${image_dir}/${image_name}.qcow2.part"* | awk '{print "  " $NF ": " $5}'
-
-    # Remove original to save space (parts can be reassembled with cat)
-    rm -f "$image_path"
-    echo "Removed original (reassemble with: cat ${image_name}.qcow2.part* > ${image_name}.qcow2)"
-
-    # Mark that this image was split
-    echo "split" > "${image_dir}/.split-status"
-
-    return 0
-}
-
 # Generate SHA256 checksum for built image (per-image .sha256 file)
-# Handles both regular images and split images
 generate_checksum() {
     local image_dir="$1"
     local image_name="$2"
     local image_path="${image_dir}/${image_name}.qcow2"
     local checksum_file="${image_dir}/${image_name}.qcow2.sha256"
-
-    # Check if image was split
-    if [[ -f "${image_dir}/.split-status" ]]; then
-        echo "Generating SHA256 checksum for split image (reassembling for checksum)..."
-        # Generate checksum by piping cat output to sha256sum (doesn't create temp file)
-        local checksum
-        checksum=$(cat "${image_dir}/${image_name}.qcow2.part"* | sha256sum | awk '{print $1}')
-        echo "$checksum  ${image_name}.qcow2" > "$checksum_file"
-        echo "Checksum saved to: $checksum_file"
-        cat "$checksum_file"
-        return 0
-    fi
 
     if [[ ! -f "$image_path" ]]; then
         echo "Warning: Image not found at $image_path"
@@ -460,11 +389,7 @@ echo "Build complete. Log saved to: $logfile"
 # Template name = directory name = image name (stable naming)
 image_dir="images/${name}"
 if [[ -d "$image_dir" ]]; then
-    # Split large images for GitHub release upload (>2GB)
-    echo ""
-    split_large_image "$image_dir" "$name"
-
-    # Generate checksum for the (possibly split) image
+    # Generate checksum
     echo ""
     generate_checksum "$image_dir" "$name"
 
@@ -474,10 +399,5 @@ if [[ -d "$image_dir" ]]; then
 
     # Show final image name
     echo ""
-    if [[ -f "${image_dir}/.split-status" ]]; then
-        echo "Final image: ${image_dir}/${name}.qcow2.part* (split for GitHub upload)"
-        echo "  Reassemble: cat ${name}.qcow2.part* > ${name}.qcow2"
-    else
-        echo "Final image: ${image_dir}/${name}.qcow2"
-    fi
+    echo "Final image: ${image_dir}/${name}.qcow2"
 fi

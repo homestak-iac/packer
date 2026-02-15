@@ -6,8 +6,7 @@
 # 1. Template discovery
 # 2. SSH key handling (ephemeral and existing)
 # 3. Argument parsing (--help, --clean-cache, --auto-update)
-# 4. Image splitting for large files
-# 5. Checksum generation
+# 4. Checksum generation
 #
 
 load 'test_helper/common'
@@ -103,18 +102,6 @@ teardown() {
 
     # Image should not be split (threshold is ~2GB)
     [ ! -f "${TEST_TEMP_DIR}/images/debian-12/test-small.qcow2.partaa" ]
-}
-
-@test "split creates .split-status marker file" {
-    # This test verifies the split behavior conceptually
-    # Actual splitting requires a 2GB+ file which is impractical for tests
-
-    # Create split status marker manually to verify the pattern
-    local image_dir="${TEST_TEMP_DIR}/images/debian-13"
-    echo "split" > "${image_dir}/.split-status"
-
-    assert_file_exists "${image_dir}/.split-status"
-    assert_file_contains "${image_dir}/.split-status" "split"
 }
 
 # -----------------------------------------------------------------------------
