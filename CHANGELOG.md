@@ -4,6 +4,11 @@
 
 ### Added
 - Add built image caching to `build.sh` — skip rebuild when template files and source image unchanged (#36)
+
+### Removed
+- Remove image splitting from `build.sh` — splitting moved to `release.sh packer --upload` (#52)
+- Remove `copy-images.yml` workflow — replaced by `release.sh packer --upload` (#52)
+- Remove `release.yml` workflow — `release.sh publish` is sole release creator (#52)
   - Cache key: composite SHA256 of source cloud image + template/shared files
   - `--force` flag bypasses cache; cache auto-invalidates on any file change
 - Add `apt-get upgrade -y` to all build templates for security patch coverage (#50)
