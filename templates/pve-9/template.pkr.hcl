@@ -81,9 +81,11 @@ build {
 
   # Update, upgrade, and install qemu-guest-agent
   provisioner "shell" {
+    environment_vars = ["DEBIAN_FRONTEND=noninteractive"]
     inline = [
       "apt-get update",
-      "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y",
+      "apt-get upgrade -y",
+      "apt-get autoremove -y",
       "apt-get install -y qemu-guest-agent",
     ]
   }
@@ -100,6 +102,7 @@ build {
 
   # Install Proxmox VE packages (non-interactive)
   provisioner "shell" {
+    environment_vars = ["DEBIAN_FRONTEND=noninteractive"]
     inline = [
       "apt-get update",
       "echo 'Pre-seeding debconf for non-interactive installation...'",
@@ -107,7 +110,8 @@ build {
       "echo 'grub-pc grub-pc/install_devices_empty boolean false' | debconf-set-selections",
       "echo 'postfix postfix/main_mailer_type select Local only' | debconf-set-selections",
       "echo 'Installing Proxmox VE packages (this takes ~10-15 minutes)...'",
-      "DEBIAN_FRONTEND=noninteractive apt-get install -y proxmox-ve postfix open-iscsi chrony",
+      "apt-get install -y proxmox-ve postfix open-iscsi chrony",
+      "apt-get autoremove -y",
       "echo 'Proxmox VE packages installed successfully'",
     ]
   }

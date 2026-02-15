@@ -385,11 +385,26 @@ fi
 echo ""
 echo "Build complete. Log saved to: $logfile"
 
-# Post-build: generate checksum
+# Post-build: compress, checksum, cache key
 # Template name = directory name = image name (stable naming)
 image_dir="images/${name}"
 if [[ -d "$image_dir" ]]; then
-    # Generate checksum
+    image_file="${image_dir}/${name}.qcow2"
+
+    # Compress qcow2 — reclaims sparse space and applies zlib compression
+    # Packer outputs uncompacted qcow2 (e.g., pve-9: 5.9GB file → ~3.4GB compressed)
+    if [[ -f "$image_file" ]]; then
+        raw_size=$(du -h "$image_file" | cut -f1)
+        echo ""
+        echo "Compressing ${name}.qcow2 ($raw_size)..."
+        tmp_file="${image_file}.tmp"
+        qemu-img convert -c -O qcow2 "$image_file" "$tmp_file"
+        mv "$tmp_file" "$image_file"
+        compressed_size=$(du -h "$image_file" | cut -f1)
+        echo "Compressed: $raw_size -> $compressed_size"
+    fi
+
+    # Generate checksum (of compressed image)
     echo ""
     generate_checksum "$image_dir" "$name"
 

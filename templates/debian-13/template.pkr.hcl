@@ -81,9 +81,11 @@ build {
 
   # Update, upgrade, and install packages
   provisioner "shell" {
+    environment_vars = ["DEBIAN_FRONTEND=noninteractive"]
     inline = [
       "apt-get update",
-      "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y",
+      "apt-get upgrade -y",
+      "apt-get autoremove -y",
       "apt-get install -y qemu-guest-agent",
     ]
   }
