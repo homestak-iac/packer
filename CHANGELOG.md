@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Added
+- Add built image caching to `build.sh` — skip rebuild when template files and source image unchanged (#36)
+  - Cache key: composite SHA256 of source cloud image + template/shared files
+  - `--force` flag bypasses cache; cache auto-invalidates on any file change
+- Add `apt-get upgrade -y` to all build templates for security patch coverage (#50)
+
+### Changed
+- Simplify image naming: drop `-custom` suffix, rename `debian-13-pve` to `pve-9` (#48)
+  - Template directories: `debian-12-custom` → `debian-12`, `debian-13-custom` → `debian-13`, `debian-13-pve` → `pve-9`
+  - Output images: `debian-12.qcow2`, `debian-13.qcow2`, `pve-9.qcow2`
+  - Simplified `build.sh`: removed versioned naming logic, simplified cache management
+  - Simplified `publish.sh`: removed symlink creation
+
 ### Fixed
 - Keep apt lists in packer images — stop removing `/var/lib/apt/lists/*` during cleanup so VMs boot with a usable apt cache (#47)
 

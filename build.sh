@@ -14,6 +14,7 @@ get_version() {
 
 CLEAN_CACHE=false
 AUTO_UPDATE=false
+FORCE_BUILD=false
 
 usage() {
     cat <<EOF
@@ -24,17 +25,19 @@ Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
 Options:
   --help, -h       Show this help message
   --version        Show version
+  --force          Rebuild even if cache is valid
   --clean-cache    Clear cached base images before building
   --auto-update    Automatically clear stale cache and retry on checksum mismatch
 
 Arguments:
-  TEMPLATE         Template name (e.g., debian-12-custom). If omitted, shows menu.
+  TEMPLATE         Template name (e.g., debian-12, pve-9). If omitted, shows menu.
 
 Examples:
   $(basename "$0")                           # Interactive menu
-  $(basename "$0") debian-12-custom          # Build specific template
-  $(basename "$0") --clean-cache debian-13-pve  # Fresh build, no cache
-  $(basename "$0") --auto-update debian-12-custom  # Auto-retry on stale cache
+  $(basename "$0") debian-12                 # Build specific template (uses cache)
+  $(basename "$0") --force debian-12         # Force rebuild, ignore cache
+  $(basename "$0") --clean-cache pve-9       # Fresh build, no base image cache
+  $(basename "$0") --auto-update debian-13   # Auto-retry on stale cache
 
 Environment:
   SSH_KEY_FILE     Path to SSH key (default: generates ephemeral key)
@@ -45,12 +48,20 @@ EOF
 clean_cache() {
     local template_name="$1"
 
-    # Map template to cache file
-    # debian-12-custom, debian-13-custom -> debian-{12,13}-generic-amd64.qcow2
-    # debian-13-pve -> debian-13-generic-amd64.qcow2
-    local debian_version
-    debian_version=$(echo "$template_name" | grep -oP 'debian-\K[0-9]+')
-    local cache_file="cache/debian-${debian_version}-generic-amd64.qcow2"
+    # Extract cache file path from template HCL
+    local template_file="templates/${template_name}/template.pkr.hcl"
+    if [[ ! -f "$template_file" ]]; then
+        echo "Warning: Template not found: $template_file"
+        return
+    fi
+
+    local cache_file
+    cache_file=$(grep 'iso_target_path' "$template_file" | grep -oP '"[^"]*"' | tr -d '"')
+
+    if [[ -z "$cache_file" ]]; then
+        echo "Warning: Could not determine cache file for $template_name"
+        return
+    fi
 
     if [[ -f "$cache_file" ]]; then
         echo "Clearing cached base image: $cache_file"
@@ -66,10 +77,90 @@ clean_all_cache() {
     echo "Cache cleared."
 }
 
+# -----------------------------------------------------------------------------
+# Built Image Caching
+# -----------------------------------------------------------------------------
+
+# Compute a composite cache key from source image + template files.
+# Cache key = SHA256(source_image_checksum + template_files_hash)
+compute_cache_key() {
+    local template_name="$1"
+
+    # Files that contribute to the cache key
+    local files=(
+        "templates/${template_name}/template.pkr.hcl"
+        "templates/${template_name}/cleanup.sh"
+        "shared/scripts/cleanup-common.sh"
+        "shared/scripts/detect-versions.sh"
+        "shared/cloud-init/user-data.pkrtpl"
+        "shared/cloud-init/meta-data"
+    )
+
+    # Hash template files (sort for determinism)
+    local template_hash
+    template_hash=$(cat "${files[@]}" 2>/dev/null | sha256sum | awk '{print $1}')
+
+    # Get source cloud image checksum (from cached download)
+    local cache_file
+    cache_file=$(grep 'iso_target_path' "templates/${template_name}/template.pkr.hcl" \
+        | grep -oP '"[^"]*"' | tr -d '"')
+
+    local source_hash="none"
+    if [[ -n "$cache_file" && -f "$cache_file" ]]; then
+        source_hash=$(sha256sum "$cache_file" | awk '{print $1}')
+    fi
+
+    # Composite key: hash of both components
+    echo "${source_hash}:${template_hash}" | sha256sum | awk '{print $1}'
+}
+
+# Check if cached build is still valid. Returns 0 (cache hit) or 1 (cache miss).
+check_build_cache() {
+    local template_name="$1"
+    local cache_key_file="images/${template_name}/.cache-key"
+    local image_file="images/${template_name}/${template_name}.qcow2"
+
+    # No cache key file → miss
+    if [[ ! -f "$cache_key_file" ]]; then
+        echo "Cache miss: no .cache-key file"
+        return 1
+    fi
+
+    # No built image (and no split parts) → miss
+    if [[ ! -f "$image_file" ]] && ! ls "images/${template_name}/${template_name}.qcow2.part"* &>/dev/null; then
+        echo "Cache miss: no built image"
+        return 1
+    fi
+
+    local stored_key current_key
+    stored_key=$(cat "$cache_key_file")
+    current_key=$(compute_cache_key "$template_name")
+
+    if [[ "$stored_key" == "$current_key" ]]; then
+        echo "Cache hit: built image is up to date"
+        return 0
+    else
+        echo "Cache miss: template or source image changed"
+        return 1
+    fi
+}
+
+# Write cache key after successful build
+write_cache_key() {
+    local template_name="$1"
+    local cache_key_file="images/${template_name}/.cache-key"
+
+    compute_cache_key "$template_name" > "$cache_key_file"
+}
+
 # Parse command-line options
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --force)
+            FORCE_BUILD=true
+            shift
+            ;;
         --clean-cache)
             CLEAN_CACHE=true
             shift
@@ -149,84 +240,6 @@ cleanup_ssh_key() {
 }
 trap cleanup_ssh_key EXIT
 
-# Generate versioned image name from version file
-# Outputs: deb12.8-custom or deb13.1-pve9.2-custom
-generate_versioned_name() {
-    local image_dir="$1"
-    local template_name="$2"
-    local version_file="${image_dir}/image-version.txt"
-
-    if [[ ! -f "$version_file" ]]; then
-        echo "$template_name"
-        return
-    fi
-
-    # Read version info
-    local debian_version pve_version
-    debian_version=$(grep '^DEBIAN_VERSION=' "$version_file" | cut -d'=' -f2)
-    pve_version=$(grep '^PVE_VERSION=' "$version_file" | cut -d'=' -f2)
-
-    # Extract variant from template name (e.g., "custom" from "debian-12-custom")
-    local variant
-    # shellcheck disable=SC2001 # regex pattern requires sed
-    variant=$(echo "$template_name" | sed 's/debian-[0-9]*-//')
-
-    # Build versioned name
-    # Format: debX.Y-variant or debX.Y-pveA.B[-variant]
-    # When variant is "pve" and pve_version exists, omit redundant suffix
-    local versioned_name
-    if [[ -n "$pve_version" ]]; then
-        if [[ "$variant" == "pve" ]]; then
-            # Variant already captured in pve version (e.g., deb13.3-pve9.1)
-            versioned_name="deb${debian_version}-pve${pve_version}"
-        else
-            # Non-pve variant with PVE installed (e.g., deb13.3-pve9.1-custom)
-            versioned_name="deb${debian_version}-pve${pve_version}-${variant}"
-        fi
-    else
-        versioned_name="deb${debian_version}-${variant}"
-    fi
-
-    echo "$versioned_name"
-}
-
-# Rename image with version info
-rename_with_version() {
-    local image_dir="$1"
-    local template_name="$2"
-    local original_image="${image_dir}/${template_name}.qcow2"
-
-    if [[ ! -f "$original_image" ]]; then
-        echo "Warning: Original image not found at $original_image"
-        return 1
-    fi
-
-    local versioned_name
-    versioned_name=$(generate_versioned_name "$image_dir" "$template_name")
-
-    if [[ "$versioned_name" == "$template_name" ]]; then
-        echo "No version info available, keeping original name"
-        return 0
-    fi
-
-    local versioned_image="${image_dir}/${versioned_name}.qcow2"
-
-    echo ""
-    echo "Renaming image with version info..."
-    echo "  From: ${template_name}.qcow2"
-    echo "  To:   ${versioned_name}.qcow2"
-    mv "$original_image" "$versioned_image"
-
-    # Create backward-compatible symlink (debian-12-custom.qcow2 -> deb12.8-custom.qcow2)
-    echo "  Creating compatibility symlink: ${template_name}.qcow2 -> ${versioned_name}.qcow2"
-    ln -sf "${versioned_name}.qcow2" "$original_image"
-
-    # Store versioned name for checksum generation
-    echo "$versioned_name" > "${image_dir}/.versioned-name"
-
-    return 0
-}
-
 # Split large image into parts for GitHub release upload (2GB limit)
 # Uses ~1.9GB parts to stay safely under limit with margin
 split_large_image() {
@@ -289,14 +302,7 @@ split_large_image() {
 # Handles both regular images and split images
 generate_checksum() {
     local image_dir="$1"
-    local template_name="$2"
-
-    # Check if we have a versioned name
-    local image_name="$template_name"
-    if [[ -f "${image_dir}/.versioned-name" ]]; then
-        image_name=$(cat "${image_dir}/.versioned-name")
-    fi
-
+    local image_name="$2"
     local image_path="${image_dir}/${image_name}.qcow2"
     local checksum_file="${image_dir}/${image_name}.qcow2.sha256"
 
@@ -381,6 +387,17 @@ if [[ "$CLEAN_CACHE" == "true" ]]; then
     echo ""
 fi
 
+# Check build cache (skip rebuild if valid, unless --force)
+if [[ "$FORCE_BUILD" != "true" ]]; then
+    if check_build_cache "$name"; then
+        echo "Skipping build (use --force to rebuild)"
+        exit 0
+    fi
+else
+    echo "Force build requested, ignoring cache"
+fi
+echo ""
+
 # Setup SSH key (ephemeral by default)
 setup_ssh_key
 
@@ -439,43 +456,28 @@ fi
 echo ""
 echo "Build complete. Log saved to: $logfile"
 
-# Post-build: rename image with version info and generate checksum
-# Output directory follows template pattern:
-# debian-12-custom -> images/debian-12
-# debian-13-custom -> images/debian-13
-# debian-13-pve -> images/debian-13-pve
-if [[ "$name" == *-custom ]]; then
-    # Strip "-custom" suffix for directory (debian-12-custom -> debian-12)
-    dir_name="${name%-custom}"
-else
-    # Keep full name for non-custom templates (debian-13-pve)
-    dir_name="$name"
-fi
-image_dir="images/${dir_name}"
+# Post-build: generate checksum
+# Template name = directory name = image name (stable naming)
+image_dir="images/${name}"
 if [[ -d "$image_dir" ]]; then
-    # Rename with version info (if available)
-    rename_with_version "$image_dir" "$name" || true
-
-    # Get the final image name for split and checksum
-    final_name="$name"
-    if [[ -f "${image_dir}/.versioned-name" ]]; then
-        final_name=$(cat "${image_dir}/.versioned-name")
-    fi
-
     # Split large images for GitHub release upload (>2GB)
     echo ""
-    split_large_image "$image_dir" "$final_name"
+    split_large_image "$image_dir" "$name"
 
     # Generate checksum for the (possibly split) image
     echo ""
     generate_checksum "$image_dir" "$name"
 
+    # Write cache key for future builds
+    write_cache_key "$name"
+    echo "Cache key written to: ${image_dir}/.cache-key"
+
     # Show final image name
     echo ""
     if [[ -f "${image_dir}/.split-status" ]]; then
-        echo "Final image: ${image_dir}/${final_name}.qcow2.part* (split for GitHub upload)"
-        echo "  Reassemble: cat ${final_name}.qcow2.part* > ${final_name}.qcow2"
+        echo "Final image: ${image_dir}/${name}.qcow2.part* (split for GitHub upload)"
+        echo "  Reassemble: cat ${name}.qcow2.part* > ${name}.qcow2"
     else
-        echo "Final image: ${image_dir}/${final_name}.qcow2"
+        echo "Final image: ${image_dir}/${name}.qcow2"
     fi
 fi

@@ -9,7 +9,7 @@ packer {
 
 variable "output_name" {
   type    = string
-  default = "debian-13-custom.qcow2"
+  default = "debian-13.qcow2"
 }
 
 variable "ssh_private_key_file" {
@@ -24,7 +24,7 @@ variable "ssh_public_key" {
 }
 
 locals {
-  template_name = "debian-13-custom"
+  template_name = "debian-13"
 }
 
 source "qemu" "debian" {
@@ -79,10 +79,11 @@ source "qemu" "debian" {
 build {
   sources = ["source.qemu.debian"]
 
-  # Install packages
+  # Update, upgrade, and install packages
   provisioner "shell" {
     inline = [
       "apt-get update",
+      "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y",
       "apt-get install -y qemu-guest-agent",
     ]
   }
