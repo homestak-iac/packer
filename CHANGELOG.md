@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.50 - 2026-02-22
+
 ### Added
 - Add built image caching to `build.sh` — skip rebuild when template files and source image unchanged (#36)
 
