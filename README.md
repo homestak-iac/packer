@@ -22,11 +22,11 @@ Part of the [homestak-dev](https://github.com/homestak-dev) organization.
 
 ## Available Templates
 
-| Template | Image Size | Boot Time | Build Time | Purpose |
-|----------|-----------|-----------|------------|---------|
-| `debian-12` | ~600 MB | ~16s | ~2 min | Base Debian 12 with qemu-guest-agent |
-| `debian-13` | ~500 MB | ~16s | ~1.5 min | Base Debian 13 with qemu-guest-agent |
-| `pve-9` | ~2.8 GB | ~16s | ~15-20 min | PVE-ready with pre-installed packages |
+| Template | Image Size (compressed) | Boot Time | Build Time | Purpose |
+|----------|------------------------|-----------|------------|---------|
+| `debian-12` | ~780 MB | ~16s | ~2 min | Base Debian 12 with qemu-guest-agent |
+| `debian-13` | ~590 MB | ~16s | ~1.5 min | Base Debian 13 with qemu-guest-agent |
+| `pve-9` | ~3.4 GB | ~16s | ~15-20 min | PVE-ready with pre-installed packages |
 
 ## Project Structure
 
