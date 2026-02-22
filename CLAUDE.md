@@ -61,12 +61,18 @@ packer/
 ```
 templates/*.pkr.hcl
     ↓ ./build.sh (packer build -force)
-images/*/*.qcow2
+images/*/*.qcow2 (raw)
+    ↓ qemu-img convert -c (automatic, in build.sh)
+images/*/*.qcow2 (compressed)
     ↓ ./publish.sh (qemu-img convert)
 /var/lib/vz/template/iso/*.img
     ↓ iac-driver provisions VMs
 VMs boot in ~16s (vs ~35s with generic cloud images)
 ```
+
+After packer build completes, `build.sh` automatically compresses the qcow2 output using `qemu-img convert -c -O qcow2`. This reclaims sparse space and applies zlib compression, significantly reducing image sizes (e.g., pve-9: ~5.9 GB raw to ~3.4 GB compressed). Checksums are generated against the compressed image.
+
+Image splitting for GitHub release upload (files >2 GB) is handled by `release.sh packer --upload` in the homestak-dev repo, not by `build.sh`.
 
 ## Built Image Caching
 
@@ -91,10 +97,12 @@ Each template directory contains:
 Build process:
 1. Downloads Debian cloud image to `cache/` (cached after first run)
 2. Boots VM with cloud-init from `shared/cloud-init/`
-3. Installs qemu-guest-agent via shell provisioner
-4. Runs version detection from `shared/scripts/detect-versions.sh`
-5. Runs template-specific `cleanup.sh`
-6. Outputs `.qcow2` to `images/<template-name>/`
+3. Runs `apt-get upgrade -y` to include latest security patches
+4. Installs qemu-guest-agent via shell provisioner
+5. Runs version detection from `shared/scripts/detect-versions.sh`
+6. Runs template-specific `cleanup.sh`
+7. Outputs `.qcow2` to `images/<template-name>/`
+8. Compresses qcow2 via `qemu-img convert -c`
 
 ## cleanup.sh Responsibilities
 
@@ -176,11 +184,11 @@ apt update && apt install packer
 
 ## Available Templates
 
-| Template | Image Size | Boot Time | Purpose |
-|----------|-----------|-----------|---------|
-| `debian-12` | ~600 MB | ~16s | Base Debian 12 with qemu-guest-agent |
-| `debian-13` | ~500 MB | ~16s | Base Debian 13 with qemu-guest-agent |
-| `pve-9` | ~2.8 GB | ~16s | PVE-ready with pre-installed packages |
+| Template | Image Size (compressed) | Boot Time | Purpose |
+|----------|------------------------|-----------|---------|
+| `debian-12` | ~780 MB | ~16s | Base Debian 12 with qemu-guest-agent |
+| `debian-13` | ~590 MB | ~16s | Base Debian 13 with qemu-guest-agent |
+| `pve-9` | ~3.4 GB | ~16s | PVE-ready with pre-installed packages |
 
 ### pve-9 (PVE-ready Image)
 
