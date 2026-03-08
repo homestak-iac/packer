@@ -127,15 +127,15 @@ echo "grub-pc grub-pc/install_devices string /dev/vda" | debconf-set-selections
 
 ## Related Projects
 
-Part of the [homestak-dev](https://github.com/homestak-dev) organization:
+Part of the [homestak-iac](https://github.com/homestak-iac) organization:
 
 | Repo | Purpose |
 |------|---------|
-| [bootstrap](https://github.com/homestak-dev/bootstrap) | Entry point - curl\|bash setup |
-| [site-config](https://github.com/homestak-dev/site-config) | Site-specific secrets and configuration |
-| [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
-| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine (builds images, provisions VMs) |
-| [packer](https://github.com/homestak-dev/packer) | This project - custom cloud images |
+| [bootstrap](https://github.com/homestak/bootstrap) | Entry point - curl\|bash setup |
+| [config](https://github.com/homestak/config) | Site-specific secrets and configuration |
+| [ansible](https://github.com/homestak-iac/ansible) | Proxmox host configuration |
+| [iac-driver](https://github.com/homestak-iac/iac-driver) | Orchestration engine (builds images, provisions VMs) |
+| [packer](https://github.com/homestak-iac/packer) | This project - custom cloud images |
 
 ## Prerequisites
 
