@@ -25,7 +25,7 @@ jobs:
 
       - name: Run shellcheck
         run: |
-          shellcheck build.sh publish.sh checksums.sh
+          shellcheck build publish checksums
 
   validate:
     runs-on: ubuntu-latest

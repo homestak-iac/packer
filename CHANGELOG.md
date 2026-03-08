@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+- Drop `.sh` extension from executable scripts (homestak-dev#313)
+  - `build.sh` → `build`, `publish.sh` → `publish`, `checksums.sh` → `checksums`
+
 ## v0.53 - 2026-03-06
 
 No changes.

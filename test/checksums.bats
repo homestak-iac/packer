@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# checksums.bats - Tests for checksums.sh
+# checksums.bats - Tests for checksums
 #
 # Tests:
 # 1. Checksum generation for single files
@@ -27,7 +27,7 @@ teardown() {
     # Create mock image
     create_mock_image "${TEST_TEMP_DIR}/images/debian-12" "debian-12-custom" 2048
 
-    # Generate checksum manually (simulating checksums.sh generate)
+    # Generate checksum manually (simulating checksums generate)
     (cd "${TEST_TEMP_DIR}/images/debian-12" && sha256sum "debian-12-custom.qcow2" > "debian-12-custom.qcow2.sha256")
 
     assert_file_exists "${TEST_TEMP_DIR}/images/debian-12/debian-12-custom.qcow2.sha256"
@@ -126,7 +126,7 @@ teardown() {
     create_mock_image "${TEST_TEMP_DIR}/images/debian-12" "test" 1024
     create_mock_checksum "${TEST_TEMP_DIR}/images/debian-12" "test"
 
-    # Simulate 'checksums.sh show'
+    # Simulate 'checksums show'
     run cat "${TEST_TEMP_DIR}/images/debian-12/test.qcow2.sha256"
     [ "$status" -eq 0 ]
     [[ "$output" == *"test.qcow2"* ]]

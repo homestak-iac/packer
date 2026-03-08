@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# build.bats - Tests for build.sh
+# build.bats - Tests for build
 #
 # Tests:
 # 1. Template discovery
@@ -28,7 +28,7 @@ teardown() {
     [ -f "${TEST_TEMP_DIR}/templates/debian-12-custom/template.pkr.hcl" ]
     [ -f "${TEST_TEMP_DIR}/templates/debian-13-custom/template.pkr.hcl" ]
 
-    # Count templates using same pattern as build.sh
+    # Count templates using same pattern as build
     local templates
     templates=(${TEST_TEMP_DIR}/templates/*/template.pkr.hcl)
     [ "${#templates[@]}" -eq 2 ]
@@ -75,13 +75,13 @@ teardown() {
 # -----------------------------------------------------------------------------
 
 @test "--help flag is recognized" {
-    # Source the help text pattern from build.sh
+    # Source the help text pattern from build
     # We're testing the pattern, not the actual script execution
     local help_pattern="--help"
     local clean_cache_pattern="--clean-cache"
     local auto_update_pattern="--auto-update"
 
-    # These should be recognized flags in build.sh
+    # These should be recognized flags in build
     [[ "--help" =~ ^-- ]]
     [[ "--clean-cache" =~ ^-- ]]
     [[ "--auto-update" =~ ^-- ]]

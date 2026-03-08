@@ -12,10 +12,10 @@ get_version() {
 
 show_help() {
     cat << 'EOF'
-checksums.sh - Generate or verify SHA256 checksums for packer images
+checksums - Generate or verify SHA256 checksums for packer images
 
 Usage:
-  checksums.sh [options] <command>
+  checksums [options] <command>
 
 Options:
   --help, -h    Show this help message
@@ -31,9 +31,9 @@ Description:
   Checksums are generated in the same directory as the image files.
 
 Examples:
-  ./checksums.sh generate    # Generate checksums for all built images
-  ./checksums.sh verify      # Verify all images match their checksums
-  ./checksums.sh show        # Display current checksums
+  ./checksums generate    # Generate checksums for all built images
+  ./checksums verify      # Verify all images match their checksums
+  ./checksums show        # Display current checksums
 EOF
     exit 0
 }
@@ -106,7 +106,7 @@ verify_checksums() {
 
     if [[ $found -eq 0 ]]; then
         echo "No checksum files found"
-        echo "Run '$0 generate' first or build images with build.sh"
+        echo "Run '$0 generate' first or build images with build"
         return 1
     fi
 
@@ -147,7 +147,7 @@ show_checksums() {
 
     if [[ $found -eq 0 ]]; then
         echo "No checksum files found"
-        echo "Run '$0 generate' or build images with build.sh"
+        echo "Run '$0 generate' or build images with build"
         return 1
     fi
 }
@@ -158,7 +158,7 @@ case "${1:-}" in
         show_help
         ;;
     --version)
-        echo "checksums.sh $(get_version)"
+        echo "checksums $(get_version)"
         exit 0
         ;;
     generate)

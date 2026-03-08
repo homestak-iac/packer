@@ -35,4 +35,4 @@ lint:
 		echo "shellcheck not found. Install with: apt install shellcheck"; \
 		exit 1; \
 	fi
-	shellcheck build.sh publish.sh checksums.sh
+	shellcheck build publish checksums
