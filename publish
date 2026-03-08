@@ -13,10 +13,10 @@ DRY_RUN=false
 
 show_help() {
     cat << 'EOF'
-publish.sh - Publish packer images to Proxmox VE storage
+publish - Publish packer images to Proxmox VE storage
 
 Usage:
-  publish.sh [options]
+  publish [options]
 
 Options:
   --help, -h    Show this help message
@@ -31,8 +31,8 @@ Description:
   Only copies images that are newer than the destination or don't exist.
 
 Examples:
-  ./publish.sh            # Publish all built images
-  ./publish.sh --dry-run  # Preview what would be published
+  ./publish            # Publish all built images
+  ./publish --dry-run  # Preview what would be published
 EOF
     exit 0
 }
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             ;;
         --version)
-            echo "publish.sh $(get_version)"
+            echo "publish $(get_version)"
             exit 0
             ;;
         --dry-run)
@@ -97,7 +97,7 @@ done
 
 echo ""
 if [[ $found -eq 0 ]]; then
-    echo "No images found in images/. Run build.sh first."
+    echo "No images found in images/. Run build first."
     exit 1
 elif [[ $updated -gt 0 ]]; then
     if [[ "$DRY_RUN" == "true" ]]; then

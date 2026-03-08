@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# publish.bats - Tests for publish.sh
+# publish.bats - Tests for publish
 #
 # Tests:
 # 1. Argument parsing (--help, --version, --dry-run)
@@ -10,7 +10,7 @@
 # 5. Versioned name handling
 #
 # Note: Tests that require file I/O test the logic patterns rather than
-# running the full script, since publish.sh changes to its own directory.
+# running the full script, since publish changes to its own directory.
 #
 
 load 'test_helper/common'
@@ -28,33 +28,33 @@ teardown() {
 # -----------------------------------------------------------------------------
 
 @test "--help shows usage information" {
-    run "${PACKER_DIR}/publish.sh" --help
+    run "${PACKER_DIR}/publish" --help
 
     [ "$status" -eq 0 ]
-    assert_output_contains "publish.sh"
+    assert_output_contains "publish"
     assert_output_contains "Usage:"
     assert_output_contains "--help"
     assert_output_contains "--dry-run"
 }
 
 @test "-h is alias for --help" {
-    run "${PACKER_DIR}/publish.sh" -h
+    run "${PACKER_DIR}/publish" -h
 
     [ "$status" -eq 0 ]
     assert_output_contains "Usage:"
 }
 
 @test "--version shows version" {
-    run "${PACKER_DIR}/publish.sh" --version
+    run "${PACKER_DIR}/publish" --version
 
     [ "$status" -eq 0 ]
-    assert_output_contains "publish.sh"
+    assert_output_contains "publish"
     # Version is either a tag (v0.x) or "dev"
-    [[ "$output" =~ publish\.sh\ (v[0-9]+\.[0-9]+|dev) ]]
+    [[ "$output" =~ publish\ (v[0-9]+\.[0-9]+|dev) ]]
 }
 
 @test "unknown option returns error" {
-    run "${PACKER_DIR}/publish.sh" --invalid-option
+    run "${PACKER_DIR}/publish" --invalid-option
 
     [ "$status" -eq 1 ]
     assert_output_contains "Unknown option"
@@ -69,7 +69,7 @@ teardown() {
     create_mock_image "${TEST_TEMP_DIR}/images/debian-12" "debian-12-custom" 1024
     create_mock_image "${TEST_TEMP_DIR}/images/debian-13" "debian-13-custom" 1024
 
-    # Test the glob pattern used by publish.sh
+    # Test the glob pattern used by publish
     local images=()
     for src in "${TEST_TEMP_DIR}"/images/*/*.qcow2; do
         [[ -f "$src" ]] || continue
@@ -118,7 +118,7 @@ teardown() {
 @test "transforms .qcow2 to .img extension" {
     local src="images/debian-12/debian-12-custom.qcow2"
 
-    # Transformation logic from publish.sh
+    # Transformation logic from publish
     local destname
     destname="$(basename "$src" .qcow2).img"
 
@@ -167,7 +167,7 @@ teardown() {
     local versioned_name
     versioned_name=$(cat "${image_dir}/.versioned-name")
 
-    # Symlink logic from publish.sh
+    # Symlink logic from publish
     local needs_symlink=false
     if [[ "$template_name" != "$versioned_name" ]]; then
         needs_symlink=true
@@ -185,7 +185,7 @@ teardown() {
     local versioned_name
     versioned_name=$(cat "${image_dir}/.versioned-name")
 
-    # Symlink logic from publish.sh
+    # Symlink logic from publish
     local needs_symlink=false
     if [[ "$template_name" != "$versioned_name" ]]; then
         needs_symlink=true
@@ -238,7 +238,7 @@ teardown() {
     # Create src second (newer)
     echo "new" > "$src"
 
-    # Logic from publish.sh: skip if dest exists AND is newer than src
+    # Logic from publish: skip if dest exists AND is newer than src
     local should_copy=true
     if [[ -f "$dest" && "$dest" -nt "$src" ]]; then
         should_copy=false
@@ -257,7 +257,7 @@ teardown() {
     # Create dest second (newer)
     echo "new" > "$dest"
 
-    # Logic from publish.sh
+    # Logic from publish
     local should_copy=true
     if [[ -f "$dest" && "$dest" -nt "$src" ]]; then
         should_copy=false
@@ -286,7 +286,7 @@ teardown() {
 # -----------------------------------------------------------------------------
 
 @test "dry-run flag sets DRY_RUN variable" {
-    # Simulate argument parsing from publish.sh
+    # Simulate argument parsing from publish
     local DRY_RUN=false
 
     local args=("--dry-run")

@@ -18,7 +18,7 @@ FORCE_BUILD=false
 
 usage() {
     cat <<EOF
-build.sh $(get_version) - Build packer images with optional cache management
+build $(get_version) - Build packer images with optional cache management
 
 Usage: $(basename "$0") [OPTIONS] [TEMPLATE]
 
@@ -173,7 +173,7 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         --version)
-            echo "build.sh $(get_version)"
+            echo "build $(get_version)"
             exit 0
             ;;
         -*)
@@ -194,8 +194,8 @@ set -- "${POSITIONAL_ARGS[@]+"${POSITIONAL_ARGS[@]}"}"
 # -----------------------------------------------------------------------------
 
 # SSH key handling - generates ephemeral keypair or uses existing key
-# Usage: SSH_KEY_FILE=~/.ssh/id_rsa ./build.sh  (use existing key)
-#        ./build.sh                              (generate ephemeral key)
+# Usage: SSH_KEY_FILE=~/.ssh/id_rsa ./build  (use existing key)
+#        ./build                              (generate ephemeral key)
 SSH_KEY_FILE="${SSH_KEY_FILE:-ephemeral}"
 SSH_TMPDIR=""
 
@@ -218,7 +218,7 @@ setup_ssh_key() {
             echo "Options:"
             echo "  1. Generate a key: ssh-keygen -t ed25519"
             echo "  2. Use ephemeral key: unset SSH_KEY_FILE (default)"
-            echo "  3. Specify different key: SSH_KEY_FILE=/path/to/key ./build.sh"
+            echo "  3. Specify different key: SSH_KEY_FILE=/path/to/key ./build"
             exit 1
         fi
 
