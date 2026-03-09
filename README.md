@@ -85,7 +85,7 @@ SSH keys are generated automatically per-build. To use an existing key: `SSH_KEY
 
 ## Releases
 
-Pre-built images are available on the [`latest` GitHub Release](https://github.com/homestak-dev/packer/releases/tag/latest).
+Pre-built images are available on the [`latest` GitHub Release](https://github.com/homestak-iac/packer/releases/tag/latest).
 
 **Download via homestak CLI:**
 ```bash
@@ -94,7 +94,7 @@ homestak images download all --publish   # Download and install all images
 
 **Or manually:**
 ```bash
-gh release download latest --repo homestak-dev/packer --pattern '*.qcow2'
+gh release download latest --repo homestak-iac/packer --pattern '*.qcow2'
 ```
 
 ## Third-Party Acknowledgments
@@ -107,10 +107,10 @@ gh release download latest --repo homestak-dev/packer --pattern '*.qcow2'
 
 | Repo | Purpose |
 |------|---------|
-| [bootstrap](https://github.com/homestak-dev/bootstrap) | Entry point - curl\|bash setup |
-| [site-config](https://github.com/homestak-dev/site-config) | Site-specific secrets and configuration |
-| [ansible](https://github.com/homestak-dev/ansible) | Proxmox host configuration |
-| [iac-driver](https://github.com/homestak-dev/iac-driver) | Orchestration engine (builds images, provisions VMs) |
+| [bootstrap](https://github.com/homestak/bootstrap) | Entry point - curl\|bash setup |
+| [config](https://github.com/homestak/config) | Site-specific secrets and configuration |
+| [ansible](https://github.com/homestak-iac/ansible) | Proxmox host configuration |
+| [iac-driver](https://github.com/homestak-iac/iac-driver) | Orchestration engine (builds images, provisions VMs) |
 
 ## License
 
