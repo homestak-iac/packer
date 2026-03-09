@@ -72,7 +72,7 @@ VMs boot in ~16s (vs ~35s with generic cloud images)
 
 After packer build completes, `build` automatically compresses the qcow2 output using `qemu-img convert -c -O qcow2`. This reclaims sparse space and applies zlib compression, significantly reducing image sizes (e.g., pve-9: ~5.9 GB raw to ~3.4 GB compressed). Checksums are generated against the compressed image.
 
-Image splitting for GitHub release upload (files >2 GB) is handled by `release packer --upload` in the homestak-dev repo, not by `build`.
+Image splitting for GitHub release upload (files >2 GB) is handled by `release packer --upload` in the meta repo, not by `build`.
 
 ## Built Image Caching
 
