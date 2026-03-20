@@ -8,6 +8,27 @@ Packer templates for building custom Debian cloud images with pre-installed pack
 
 See [docs/designs/packer-pipeline.md](../docs/designs/packer-pipeline.md) for naming conventions, build workflow, caching strategy, and release integration.
 
+## Ecosystem Context
+
+This repo is part of the homestak polyrepo workspace. For project architecture,
+development lifecycle, sprint/release process, and cross-repo conventions, see:
+
+- `~/homestak/dev/meta/CLAUDE.md` — primary reference
+- `docs/lifecycle/` in meta — 7-phase development process
+- `docs/CLAUDE-GUIDELINES.md` in meta — documentation standards
+
+When working in a scoped session (this repo only), follow the same sprint/release
+process defined in meta. Use `/session save` before context compaction and
+`/session resume` to restore state in new sessions.
+
+### Agent Boundaries
+
+This agent operates within the following constraints:
+
+- Opens PRs via `homestak-bot`; never merges without human approval
+- Runs lint and validation tools only; never executes infrastructure operations
+- Never runs `./build` or `./publish`; image builds require KVM and human initiation
+
 ## Quick Reference
 
 ```bash
