@@ -231,7 +231,7 @@ homestak images list --version v0.50      # List images in specific release
 
 | Document | Focus |
 |----------|-------|
-| [packer/CLAUDE.md](../../packer/CLAUDE.md) | Template details, build prerequisites, CI/CD |
-| [64-release-packer.md](../lifecycle/64-release-packer.md) | Release phase decision tree |
-| [tofu/CLAUDE.md](../../tofu/CLAUDE.md) | `var.images` mapping, cloud image modules |
-| [bootstrap/CLAUDE.md](../../bootstrap/CLAUDE.md) | `homestak images` CLI |
+| `$HOMESTAK_ROOT/iac/packer/CLAUDE.md` | Template details, build prerequisites, CI/CD |
+| `$HOMESTAK_ROOT/dev/meta/docs/process/64-release-packer.md` | Release phase decision tree |
+| `$HOMESTAK_ROOT/iac/tofu/CLAUDE.md` | `var.images` mapping, cloud image modules |
+| `$HOMESTAK_ROOT/bootstrap/CLAUDE.md` | `homestak images` CLI |
