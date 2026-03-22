@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Packer templates for building custom Debian cloud images with pre-installed packages. Images boot ~16s vs ~35s with stock images due to pre-installed qemu-guest-agent.
 
-See [docs/packer-pipeline.md](docs/packer-pipeline.md) for naming conventions, build workflow, caching strategy, and release integration.
+@docs/packer-pipeline.md
 
 ## Ecosystem Context
 
